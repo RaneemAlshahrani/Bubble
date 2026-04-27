@@ -119,8 +119,8 @@ src/
 ---
 ## Team Members
 
-* Yasmeen Alshehri
 * Wajd Alghamdi
+* Yasmeen Alshehri
 * Raneem Alshahrani
 * Fatimah Alshehab
 
