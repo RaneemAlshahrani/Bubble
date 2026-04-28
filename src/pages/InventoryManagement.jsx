@@ -51,6 +51,7 @@ function InventoryManagement() {
   const [products, setProducts] = useState([]);
   const [stockValues, setStockValues] = useState({});
   const [savedMessage, setSavedMessage] = useState("");
+  const [customOptions, setCustomOptions] = useState([]);
 
   useEffect(() => {
     const storedProducts = JSON.parse(localStorage.getItem("products"));
@@ -67,6 +68,13 @@ function InventoryManagement() {
     });
     setStockValues(stockMap);
   }, [defaultProducts]);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/custom-options")
+      .then((res) => res.json())
+      .then((data) => setCustomOptions(data))
+      .catch((err) => console.log(err));
+  }, []);
 
   const handleStockChange = (productId, value) => {
     setStockValues((prev) => ({
@@ -88,6 +96,37 @@ function InventoryManagement() {
     setProducts(updatedProducts);
     localStorage.setItem("products", JSON.stringify(updatedProducts));
     setSavedMessage("Saved !");
+  };
+
+  const handleToggleOption = async (option) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/custom-options/${option._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            available: !option.available,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update option");
+
+      setCustomOptions((prev) =>
+        prev.map((item) =>
+          item._id === option._id
+            ? { ...item, available: !item.available }
+            : item
+        )
+      );
+
+      setSavedMessage("Custom option updated!");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -178,6 +217,91 @@ function InventoryManagement() {
                 />
               </div>
             ))}
+            <div style={{ width: "100%", marginTop: "32px" }}>
+              <h2
+                style={{
+                  textAlign: "center",
+                  color: "#2e3d4c",
+                  marginBottom: "18px",
+                }}
+              >
+                Custom Options Availability
+              </h2>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "16px",
+                  justifyContent: "center",
+                }}
+              >
+                {customOptions.map((option) => (
+                  <div key={option._id} style={inventoryCardStyle}>
+                    <h3
+                      style={{
+                        margin: "0 0 10px",
+                        fontSize: "18px",
+                        color: "#2e3d4c",
+                      }}
+                    >
+                      {option.name}
+                    </h3>
+
+                    <p style={{ margin: "0 0 10px", color: "#555" }}>
+                      {option.type}
+                    </p>
+
+                    <p style={{ margin: "0 0 14px", color: "#555" }}>
+                      Stock: {option.stock}
+                    </p>
+
+                    <div style={{ marginBottom: "10px" }}>
+                      <input
+                        type="number"
+                        min="0"
+                        value={option.stock}
+                        onChange={async (e) => {
+                          const newStock = Number(e.target.value);
+
+                          await fetch(`http://localhost:5000/api/custom-options/${option._id}`, {
+                            method: "PUT",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ stock: newStock }),
+                          });
+
+                          setCustomOptions((prev) =>
+                            prev.map((item) =>
+                              item._id === option._id
+                                ? { ...item, stock: newStock }
+                                : item
+                            )
+                          );
+                        }}
+                        style={stockInputStyle}
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => handleToggleOption(option)}
+                      style={{
+                        ...updateButtonStyle,
+                        width: "150px",
+                        background:
+                          option.available && option.stock > 0
+                            ? "#39a86f"
+                            : "#ff5a45"
+                      }}
+                    >
+                      {option.available && option.stock > 0 ? "Available" : "Unavailable"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

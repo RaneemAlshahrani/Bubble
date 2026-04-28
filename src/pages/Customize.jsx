@@ -1,42 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import Button from "../components/Button";
 import soap from "../assets/soap-bliss.png";
+
 
 function Customize() {
     const navigate = useNavigate();
 
     // Selected options state
+    const [options, setOptions] = useState([]);
     const [selectedScents, setSelectedScents] = useState([]);
     const [selectedTexture, setSelectedTexture] = useState("");
     const [selectedIngredients, setSelectedIngredients] = useState([]);
     const [addedToCart, setAddedToCart] = useState(false);
 
-    // Available scents
-    const scents = [
-        { name: "Lavender", price: 1 },
-        { name: "Sakura", price: 1 },
-        { name: "Coconut", price: 1 },
-        { name: "Unscented", price: 0 },
-        { name: "Rose", price: 1 },
-        { name: "Honey", price: 2 },
-    ];
+    useEffect(() => {
+        fetch("http://localhost:5000/api/custom-options")
+            .then((res) => res.json())
+            .then((data) => setOptions(data))
+            .catch((err) => console.log(err));
+    }, []);
 
-    // Available textures
-    const textures = [
-        { name: "Smooth", price: 0 },
-        { name: "Scrub", price: 2 },
-    ];
-
-    // Available ingredients
-    const ingredients = [
-        { name: "Shea Butter", price: 2 },
-        { name: "Aloe Vera", price: 2 },
-        { name: "Sugar", price: 1 },
-        { name: "Other Stuff", price: 2 },
-        { name: "Milk", price: 1 },
-        { name: "Love", price: 1 },
-    ];
+    const scents = options.filter((option) => option.type === "scent");
+    const textures = options.filter((option) => option.type === "texture");
+    const ingredients = options.filter((option) => option.type === "ingredient");
 
     const isMobile = window.innerWidth <= 768;
 
@@ -97,7 +85,7 @@ function Customize() {
                 },
                 body: JSON.stringify({
                     userId: "testUser",
-                    productId: "custom-soap", 
+                    productId: "custom-soap",
                     quantity: 1,
                     customOptions: {
                         scents: selectedScents,
@@ -215,6 +203,7 @@ function Customize() {
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <input
                                             type="checkbox"
+                                            disabled={!scent.available || scent.stock <= 0}
                                             checked={selectedScents.includes(scent.name)}
                                             onChange={() =>
                                                 toggleMultiSelect(
@@ -224,7 +213,14 @@ function Customize() {
                                                 )
                                             }
                                         />
-                                        {scent.name}
+                                        <span
+                                            style={{
+                                                opacity: !scent.available || scent.stock <= 0 ? 0.5 : 1,
+                                            }}
+                                        >
+                                            {scent.name}
+                                            {scent.stock <= 0 && " (Out of stock)"}
+                                        </span>
                                     </div>
 
                                     <span style={{ fontSize: "14px", color: "#666" }}>
@@ -273,10 +269,18 @@ function Customize() {
                                         <input
                                             type="radio"
                                             name="texture"
+                                            disabled={!texture.available || texture.stock <= 0}
                                             checked={selectedTexture === texture.name}
                                             onChange={() => handleTextureChange(texture.name)}
                                         />
-                                        {texture.name}
+                                        <span
+                                            style={{
+                                                opacity: !texture.available || texture.stock <= 0 ? 0.5 : 1,
+                                            }}
+                                        >
+                                            {texture.name}
+                                            {texture.stock <= 0 && " (Out of stock)"}
+                                        </span>
                                     </div>
 
                                     <span style={{ fontSize: "14px", color: "#666" }}>
@@ -326,6 +330,7 @@ function Customize() {
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                     <input
                                         type="checkbox"
+                                        disabled={!ingredient.available || ingredient.stock <= 0}
                                         checked={selectedIngredients.includes(ingredient.name)}
                                         onChange={() =>
                                             toggleMultiSelect(
@@ -335,7 +340,14 @@ function Customize() {
                                             )
                                         }
                                     />
-                                    {ingredient.name}
+                                    <span
+                                        style={{
+                                            opacity: !ingredient.available || ingredient.stock <= 0 ? 0.5 : 1,
+                                        }}
+                                    >
+                                        {ingredient.name}
+                                        {ingredient.stock <= 0 && " (Out of stock)"}
+                                    </span>
                                 </div>
 
                                 <span style={{ fontSize: "14px", color: "#666" }}>
