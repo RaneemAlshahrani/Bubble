@@ -52,6 +52,7 @@ function ProductManagement() {
   const [mode, setMode] = useState("list");
   const [savedMessage, setSavedMessage] = useState("");
   const [formError, setFormError] = useState("");
+  const [imageFile, setImageFile] = useState(null);
 
   const [formData, setFormData] = useState({
     id: null,
@@ -64,20 +65,24 @@ function ProductManagement() {
   });
 
   useEffect(() => {
-    const storedProducts = JSON.parse(localStorage.getItem("products"));
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/products");
+        const data = await res.json();
 
-    if (storedProducts && storedProducts.length > 0) {
-      setProducts(storedProducts);
-    } else {
-      setProducts(defaultProducts);
-      localStorage.setItem("products", JSON.stringify(defaultProducts));
-    }
-  }, [defaultProducts]);
+        if (data.length > 0) {
+          setProducts(data);
+        } else {
+          setProducts(defaultProducts);
+        }
+      } catch (err) {
+        console.error(err);
+        setProducts(defaultProducts);
+      }
+    };
 
-  const persistProducts = (updatedProducts) => {
-    setProducts(updatedProducts);
-    localStorage.setItem("products", JSON.stringify(updatedProducts));
-  };
+    fetchProducts();
+  }, []);
 
   const resetForm = () => {
     setFormData({
@@ -113,10 +118,18 @@ function ProductManagement() {
     setMode("edit");
   };
 
-  const handleDelete = (productId) => {
-    const updatedProducts = products.filter((product) => product.id !== productId);
-    persistProducts(updatedProducts);
-    setSavedMessage("Deleted !");
+  const handleDelete = async (productId) => {
+    try {
+      await fetch(`http://localhost:5000/api/products/${productId}`, {
+        method: "DELETE",
+      });
+
+      setProducts((prev) => prev.filter((p) => (p._id || p.id) !== productId));
+      setSavedMessage("Deleted !");
+    } catch (err) {
+      console.error(err);
+      setFormError("Failed to delete");
+    }
   };
 
   const handleChange = (e) => {
@@ -136,15 +149,7 @@ function ProductManagement() {
     setSavedMessage("");
   };
 
-  const handleImageSelect = (imageSrc) => {
-    setFormData((prev) => ({
-      ...prev,
-      image: imageSrc,
-    }));
-    setSavedMessage("");
-  };
-
-  const handleSaveProduct = () => {
+  const handleSaveProduct = async () => {
     if (
       !formData.name.trim() ||
       !formData.description.trim() ||
@@ -156,37 +161,28 @@ function ProductManagement() {
       return;
     }
 
-    if (Number(formData.price) < 0 || Number(formData.stock) < 0) {
-      setFormError("Price and stock cannot be negative.");
-      return;
-    }
+    try {
+      const data = new FormData();
 
-    let updatedProducts = [];
+      Object.keys(formData).forEach((key) => {
+        data.append(key, formData[key]);
+      });
 
-    if (formData.id) {
-      updatedProducts = products.map((product) =>
-        product.id === formData.id ? { ...formData } : product
-      );
-      persistProducts(updatedProducts);
-      setSavedMessage("Saved !");
+      // مهم: الصورة
+      data.append("image", imageFile);
 
-      setTimeout(() => {
-        setMode("list");
-        resetForm();
-      }, 700);
-    } else {
-      const newProduct = {
-        ...formData,
-        id: Date.now(),
-      };
-      updatedProducts = [...products, newProduct];
-      persistProducts(updatedProducts);
-      setSavedMessage("Added !");
+      const response = await fetch("http://localhost:5000/api/products", {
+        method: "POST",
+        body: data,
+      });
 
-      setTimeout(() => {
-        setMode("list");
-        resetForm();
-      }, 700);
+      if (!response.ok) throw new Error("Failed");
+
+      setSavedMessage("Added successfully 🎉");
+
+    } catch (error) {
+      console.error(error);
+      setFormError("Error adding product");
     }
   };
 
@@ -242,13 +238,13 @@ function ProductManagement() {
           style={{
             ...(mode === "edit"
               ? {
-                  background: "transparent",
-                  border: "none",
-                  borderRadius: 0,
-                  backdropFilter: "none",
-                  padding: 0,
-                  minHeight: "calc(100vh - 36px)",
-                }
+                background: "transparent",
+                border: "none",
+                borderRadius: 0,
+                backdropFilter: "none",
+                padding: 0,
+                minHeight: "calc(100vh - 36px)",
+              }
               : mainPanelStyle),
           }}
         >
@@ -289,9 +285,13 @@ function ProductManagement() {
                 }}
               >
                 {products.map((product) => (
-                  <div key={product.id} style={productCardStyle}>
+                  <div key={product._id || product.id} style={productCardStyle}>
                     <img
-                      src={product.image}
+                      src={
+                        product.image?.startsWith("http")
+                          ? product.image
+                          : new URL(`../assets/${product.image}`, import.meta.url).href
+                      }
                       alt={product.name}
                       style={{
                         width: "170px",
@@ -314,7 +314,7 @@ function ProductManagement() {
 
                     <button
                       style={purpleButtonStyle}
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => handleDelete(product._id || product.id)}
                     >
                       Delete
                     </button>
@@ -399,17 +399,36 @@ function ProductManagement() {
                   Image
                 </p>
 
-                <img
-                  src={formData.image}
-                  alt="Selected product"
-                  style={{
-                    width: "240px",
-                    height: "240px",
-                    objectFit: "contain",
-                    margin: "0 auto 16px",
-                    display: "block",
-                  }}
-                />
+                {imageFile ? (
+                  <img
+                    src={URL.createObjectURL(imageFile)}
+                    alt="Selected"
+                    style={{
+                      width: "240px",
+                      height: "240px",
+                      objectFit: "contain",
+                      margin: "0 auto 16px",
+                      display: "block",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "240px",
+                      height: "240px",
+                      margin: "0 auto 16px",
+                      border: "2px dashed #aaa",
+                      borderRadius: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#555",
+                      fontSize: "20px",
+                    }}
+                  >
+                    Select an image
+                  </div>
+                )}
 
                 <div
                   style={{
@@ -419,24 +438,10 @@ function ProductManagement() {
                     flexWrap: "wrap",
                   }}
                 >
-                  <button onClick={() => handleImageSelect(rose)} style={imageSelectButtonStyle}>
-                    Sakura
-                  </button>
-                  <button
-                    onClick={() => handleImageSelect(lavender)}
-                    style={imageSelectButtonStyle}
-                  >
-                    Lavender
-                  </button>
-                  <button
-                    onClick={() => handleImageSelect(rosemary)}
-                    style={imageSelectButtonStyle}
-                  >
-                    Rosemary
-                  </button>
-                  <button onClick={() => handleImageSelect(soap)} style={imageSelectButtonStyle}>
-                    Soap
-                  </button>
+                  <input
+                    type="file"
+                    onChange={(e) => setImageFile(e.target.files[0])}
+                  />
                 </div>
               </div>
 
