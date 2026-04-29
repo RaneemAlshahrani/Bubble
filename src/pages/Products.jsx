@@ -67,7 +67,9 @@ function Products() {
 
       const matchesSkinType =
         selectedSkinTypes.length === 0 ||
-        selectedSkinTypes.includes(product.skinType);
+        product.skinType?.some((type) =>
+          selectedSkinTypes.includes(type)
+        );
 
       return matchesPrice && matchesScent && matchesSkinType;
     });

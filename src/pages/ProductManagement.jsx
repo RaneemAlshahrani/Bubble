@@ -54,6 +54,7 @@ function ProductManagement() {
   const [formError, setFormError] = useState("");
   const [imageFile, setImageFile] = useState(null);
 
+
   const [formData, setFormData] = useState({
     id: null,
     name: "",
@@ -63,6 +64,8 @@ function ProductManagement() {
     stock: "",
     image: rose,
     theme: "pink",
+    scent: "",
+    skinType: [],
   });
 
   useEffect(() => {
@@ -94,6 +97,9 @@ function ProductManagement() {
       ingredients: "",
       stock: "",
       image: rose,
+      scent: "",
+      skinType: [],
+
     });
     setFormError("");
   };
@@ -382,6 +388,53 @@ function ProductManagement() {
                     onChange={handleChange}
                     style={wideInputStyle}
                   />
+                </div>
+
+                <div style={fieldBoxStyle}>
+                  <label style={fieldLabelStyle}>Scent</label>
+                  <select
+                    name="scent"
+                    value={formData.scent || ""}
+                    onChange={handleChange}
+                    style={wideInputStyle}
+                  >
+                    <option value="">Select scent</option>
+                    <option value="Lavender">Lavender</option>
+                    <option value="Sakura">Sakura</option>
+                    <option value="Coconut">Coconut</option>
+                    <option value="Unscented">Unscented</option>
+                    <option value="Rose">Rose</option>
+                    <option value="Honey">Honey</option>
+                  </select>
+                </div>
+
+                <div style={fieldBoxStyle}>
+                  <label style={fieldLabelStyle}>Skin Type</label>
+
+                  {["Normal", "Dry", "Oily", "Sensitive"].map((type) => (
+                    <label key={type} style={{ display: "block", textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        value={type}
+                        checked={formData.skinType?.includes(type) || false}
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          setFormData((prev) => {
+                            const current = prev.skinType || [];
+
+                            return {
+                              ...prev,
+                              skinType: current.includes(value)
+                                ? current.filter((t) => t !== value)
+                                : [...current, value],
+                            };
+                          });
+                        }}
+                      />
+                      {" "}{type}
+                    </label>
+                  ))}
                 </div>
 
                 <div style={fieldBoxStyle}>
