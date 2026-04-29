@@ -58,9 +58,11 @@ function Products() {
 
     // Filter products based on selected options
     const result = allProducts.filter((product) => {
+      if (product._id === "custom-soap") return true;
       const matchesPrice =
-        product.price == null ||
-        (product.price >= Number(minPrice) && product.price <= Number(maxPrice));
+        product.price != null &&
+        product.price >= Number(minPrice) &&
+        product.price <= Number(maxPrice);
 
       const matchesScent =
         selectedScents.length === 0 || selectedScents.includes(product.scent);
