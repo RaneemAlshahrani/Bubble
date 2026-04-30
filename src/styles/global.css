@@ -166,3 +166,31 @@ body {
 button {
   font-family: 'Josefin Sans', sans-serif;
 }
+
+@media (max-width: 768px) {
+  /* Products page layout */
+  .purple-page > div {
+    width: 95% !important;
+    padding-top: 70px !important;
+  }
+
+  .purple-page > div > div[style] {
+    flex-wrap: wrap !important;
+  }
+
+  .purple-page > div > div > div:first-child {
+    width: 100% !important;
+    min-height: auto !important;
+  }
+
+  .purple-page div[style*="grid"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .purple-page div[style*="grid"] {
+    grid-template-columns: 1fr !important;
+  }
+}

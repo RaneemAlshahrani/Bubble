@@ -108,7 +108,7 @@ function Products() {
             display: "flex",
             gap: "18px",
             alignItems: "stretch",
-            flexWrap: "nowrap",
+            flexWrap: "wrap",
             marginTop: "30px",
           }}
         >
@@ -327,7 +327,7 @@ function Products() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 220px))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
                   justifyContent: "center",
                   gap: "20px",
                   paddingRight: "4px",
