@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import rose from "../assets/rose.png";
-import lavender from "../assets/lavender.png";
 import bubble8 from "../assets/bubble8.png";
-import rosemary from "../assets/rosemary.png";
 import soap from "../assets/soap-bliss.png";
 
 function Cart() {
@@ -13,53 +10,6 @@ function Cart() {
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
   const isLoggedIn = !!currentUser;
-
-  const allProducts = [
-    {
-      id: 1,
-      name: "Sakura Bliss",
-      price: 30,
-      image: rose,
-      description: "A soft floral soap inspired by sakura blossoms.",
-      ingredients: "Sakura, Oil, Milk, Other stuff",
-      inStock: true,
-      stock: 10,
-      theme: "pink",
-      reviews: ["So soft on the skin!", "Smells lovely 🌸"],
-    },
-    {
-      id: 2,
-      name: "Lavender Bliss",
-      price: 30,
-      image: lavender,
-      description: "A calming lavender soap for a relaxing routine.",
-      ingredients: "Lavender, Oil, Milk, Other stuff",
-      inStock: false,
-      stock: 0,
-      theme: "purple",
-      reviews: ["Smells amazing!", "Would buy again 💜"],
-    },
-    {
-      id: 3,
-      name: "Rosemary Bliss",
-      price: 50,
-      image: rosemary,
-      description: "A refreshing rosemary soap that energizes your skin.",
-      ingredients: "Rosemary, Oil, Milk, Other stuff",
-      inStock: true,
-      stock: 10,
-      theme: "green",
-      reviews: ["Very refreshing 🌿", "Love the scent!"],
-    },
-    {
-      id: 4,
-      name: "Soap Bliss",
-      price: 7,
-      image: soap,
-      inStock: true,
-      stock: 10,
-    },
-  ];
 
   const [discountCode, setDiscountCode] = useState("");
   const [discountMessage, setDiscountMessage] = useState("");
@@ -142,27 +92,29 @@ function Cart() {
 
     fetchCart();
 
-    const storedWishlist =
-      JSON.parse(localStorage.getItem("wishlistItems")) || [];
+    const fetchWishlist = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+        const data = await response.json();
 
-    setWishlistItems(storedWishlist);
+        setWishlistItems(
+          data.map((item) => ({
+            _id: item._id,
+            productId: item.productId?._id,
+            name: item.productId?.name,
+            price: item.productId?.price || 0,
+            image: item.productId?.image,
+            stock: item.productId?.stock,
+            quantity: item.quantity,
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch wishlist:", error);
+      }
+    };
+
+    fetchWishlist();
   }, []);
-
-  const wishlistWithDetails = wishlistItems
-    .map((item) => {
-      const product = allProducts.find((p) => p.id === item.id);
-      if (!product) return null;
-
-      return {
-        ...item,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        stock: product.stock,
-        inStock: product.inStock,
-      };
-    })
-    .filter(Boolean);
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -254,37 +206,36 @@ function Cart() {
     }
   };
 
-  const updateWishlistQuantity = (id, change) => {
-    const updatedWishlist = wishlistItems.map((item) => {
-      if (item.id !== id) return item;
+  const updateWishlistQuantity = async (itemToUpdate, change) => {
+    const newQuantity = itemToUpdate.quantity + change;
 
-      const product = allProducts.find((p) => p.id === id);
-      const stock = product?.stock ?? 0;
-      const newQuantity = item.quantity + change;
+    if (newQuantity < 1) return;
+    if (newQuantity > itemToUpdate.stock) return;
 
-      if (newQuantity < 1) {
-        return {
-          ...item,
-          quantity: 1,
-        };
-      }
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/wishlist/${itemToUpdate._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ quantity: newQuantity }),
+        }
+      );
 
-      if (stock === 0) {
-        return item;
-      }
+      if (!response.ok) throw new Error("Failed to update");
 
-      if (newQuantity > stock) {
-        return item;
-      }
-
-      return {
-        ...item,
-        quantity: newQuantity,
-      };
-    });
-
-    setWishlistItems(updatedWishlist);
-    localStorage.setItem("wishlistItems", JSON.stringify(updatedWishlist));
+      setWishlistItems((prev) =>
+        prev.map((item) =>
+          item._id === itemToUpdate._id
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const removeCartItem = async (itemToRemove) => {
@@ -308,11 +259,20 @@ function Cart() {
     }
   };
 
-  const removeWishlistItem = (id) => {
-    const updatedWishlist = wishlistItems.filter((item) => item.id !== id);
-    setWishlistItems(updatedWishlist);
-    localStorage.setItem("wishlistItems", JSON.stringify(updatedWishlist));
-    setCartMessage("Product removed successfully");
+  const removeWishlistItem = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/wishlist/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete");
+
+      setWishlistItems((prev) => prev.filter((item) => item._id !== id));
+      window.dispatchEvent(new Event("wishlistUpdated"));
+      setCartMessage("Product removed successfully");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleCheckout = () => {
@@ -605,9 +565,9 @@ function Cart() {
                   </tr>
                 </thead>
                 <tbody>
-                  {wishlistWithDetails.length > 0 ? (
-                    wishlistWithDetails.map((item) => (
-                      <tr key={item.id}>
+                  {wishlistItems.length > 0 ? (
+                    wishlistItems.map((item) => (
+                      <tr key={item._id}>
                         <td style={tdStyle}>
                           <div style={productCell}>
                             <img
@@ -628,7 +588,7 @@ function Cart() {
                         <td style={tdStyle}>
                           <div style={qtyBox}>
                             <button
-                              onClick={() => updateWishlistQuantity(item.id, -1)}
+                              onClick={() => updateWishlistQuantity(item, -1)}
                               style={qtyBtn}
                               disabled={item.stock === 0}
                             >
@@ -638,7 +598,7 @@ function Cart() {
                             <span style={qtyValue}>{item.quantity}</span>
 
                             <button
-                              onClick={() => updateWishlistQuantity(item.id, 1)}
+                              onClick={() => updateWishlistQuantity(item, 1)}
                               style={qtyBtn}
                               disabled={item.stock === 0}
                             >
@@ -655,7 +615,7 @@ function Cart() {
 
                         <td style={tdStyle}>
                           <button
-                            onClick={() => removeWishlistItem(item.id)}
+                            onClick={() => removeWishlistItem(item._id)}
                             style={trashBtn}
                           >
                             🗑

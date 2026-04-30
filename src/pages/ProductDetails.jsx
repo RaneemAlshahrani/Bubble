@@ -43,26 +43,37 @@ function ProductDetails() {
             .catch((err) => console.log(err));
     }, [id]);
 
+    useEffect(() => {
+        const checkWishlist = async () => {
+            try {
+                const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+                const data = await response.json();
+
+                const exists = data.some((item) => item.productId?._id === id);
+                setLiked(exists);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        if (id) {
+            checkWishlist();
+        }
+
+        window.addEventListener("wishlistUpdated", checkWishlist);
+
+        return () => {
+            window.removeEventListener("wishlistUpdated", checkWishlist);
+        };
+    }, [id]);
+
     if (!product) {
         return (
-            <div
-                className="pink-page"
-                style={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#ff4d3d",
-                    fontSize: "32px",
-                    textAlign: "center",
-                    padding: "20px",
-                }}
-            >
+            <div className="pink-page">
                 Product not available
             </div>
         );
     }
-
     const pageClass =
         product.theme === "purple"
             ? "purple-page"
@@ -112,13 +123,49 @@ function ProductDetails() {
     };
 
     // Toggle wishlist
-    const handleWishlistClick = () => {
+    const handleWishlistClick = async () => {
         if (!isLoggedIn) {
             alert("Please login first");
             return;
         }
 
-        setLiked(!liked);
+        try {
+            if (liked) {
+                const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+                const data = await response.json();
+
+                const wishlistItem = data.find(
+                    (item) => item.productId?._id === product._id
+                );
+
+                if (wishlistItem) {
+                    await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
+                        method: "DELETE",
+                    });
+                }
+
+                setLiked(false);
+            } else {
+                await fetch("http://localhost:5000/api/wishlist", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        userId: "testUser",
+                        productId: product._id,
+                        quantity: 1,
+                    }),
+                });
+
+                setLiked(true);
+            }
+
+            window.dispatchEvent(new Event("wishlistUpdated"));
+        } catch (error) {
+            console.error(error);
+            alert("Failed to update wishlist");
+        }
     };
 
     // Add new review

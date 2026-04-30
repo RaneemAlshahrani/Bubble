@@ -28,19 +28,33 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    if (!isLoggedIn || !product) {
-      setLiked(false);
-      return;
-    }
+    const checkWishlist = async () => {
+      if (!isLoggedIn || !product) {
+        setLiked(false);
+        return;
+      }
 
-    const storedWishlist =
-      JSON.parse(localStorage.getItem("wishlistItems")) || [];
+      try {
+        const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+        const data = await response.json();
 
-    const isLiked = storedWishlist.some((item) => item.id === product._id);
-    setLiked(isLiked);
+        const exists = data.some((item) => item.productId?._id === product._id);
+        setLiked(exists);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    checkWishlist();
+
+    window.addEventListener("wishlistUpdated", checkWishlist);
+
+    return () => {
+      window.removeEventListener("wishlistUpdated", checkWishlist);
+    };
   }, [isLoggedIn, product]);
 
-  const handleWishlist = () => {
+  const handleWishlist = async () => {
     if (!isLoggedIn) {
       navigate("/");
       return;
@@ -48,25 +62,44 @@ function Home() {
 
     if (!product) return;
 
-    let storedWishlist =
-      JSON.parse(localStorage.getItem("wishlistItems")) || [];
+    try {
+      if (liked) {
+        const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+        const data = await response.json();
 
-    const exists = storedWishlist.find((item) => item.id === product._id);
+        const wishlistItem = data.find(
+          (item) => item.productId?._id === product._id
+        );
 
-    if (exists) {
-      storedWishlist = storedWishlist.filter((item) => item.id !== product._id);
-      setLiked(false);
-    } else {
-      storedWishlist.push({
-        id: product._id,
-        quantity: 1,
-      });
-      setLiked(true);
+        if (wishlistItem) {
+          await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
+            method: "DELETE",
+          });
+        }
+
+        setLiked(false);
+      } else {
+        await fetch("http://localhost:5000/api/wishlist", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: "testUser",
+            productId: product._id,
+            quantity: 1,
+          }),
+        });
+
+        setLiked(true);
+      }
+
+      window.dispatchEvent(new Event("wishlistUpdated"));
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update wishlist");
     }
-
-    localStorage.setItem("wishlistItems", JSON.stringify(storedWishlist));
   };
-
   const handleAddToCart = () => {
     if (!isLoggedIn) {
       navigate("/");
