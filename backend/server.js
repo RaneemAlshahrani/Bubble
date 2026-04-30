@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 
 const productRoutes = require("./routes/products");
 const faqRoutes = require("./routes/faq");
+const ticketRoutes = require("./routes/tickets");
+
 const app = express(); 
 
 app.use(cors());
@@ -12,6 +14,7 @@ app.use(express.json());
 
 app.use("/api/products", productRoutes);
 app.use("/api/faqs", faqRoutes);
+app.use("/api/tickets", ticketRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is working 🚀");
