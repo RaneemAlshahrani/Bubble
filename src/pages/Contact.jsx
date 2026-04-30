@@ -19,12 +19,11 @@ function Contact() {
 
  const [faqs, setFaqs] = useState([]);
 
- useEffect(() => {
-   const saved = localStorage.getItem("faqs");
-   if (saved) {
-     setFaqs(JSON.parse(saved));
-   }
- }, []);
+useEffect(() => {
+  fetch("http://localhost:5000/api/faqs")
+    .then(res => res.json())
+    .then(data => setFaqs(data));
+}, []);
 
  const isLoggedIn = true;
  const isMobile = window.innerWidth <= 768;
@@ -177,7 +176,7 @@ function Contact() {
 
            {faqs.length > 0 ? (
              faqs.slice(0, 2).map((faq) => (
-               <div key={faq.id} style={{ marginBottom: "20px" }}>
+               <div key={faq._id} style={{ marginBottom: "20px" }}>
                  <p
                    style={{
                      margin: 0,

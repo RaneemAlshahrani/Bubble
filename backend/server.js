@@ -4,13 +4,14 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 
 const productRoutes = require("./routes/products");
-
+const faqRoutes = require("./routes/faq");
 const app = express(); 
 
 app.use(cors());
 app.use(express.json());
 
 app.use("/api/products", productRoutes);
+app.use("/api/faqs", faqRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is working 🚀");
