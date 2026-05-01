@@ -42,6 +42,11 @@ app.use("/api/faqs", faqRoutes);
 app.use("/api/tickets", ticketRoutes);
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/products", adminProductsRoutes);
+app.use("/api/admin/inventory", adminInventoryRoutes);
+app.use("/api/admin/orders", adminOrdersRoutes);
+app.use("/api/admin/promotions", adminPromotionsRoutes);
+app.use("/api/admin/reviews", adminReviewsRoutes);
 
 // Test route
 app.get("/", (req, res) => {
