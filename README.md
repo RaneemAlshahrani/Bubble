@@ -60,6 +60,11 @@ npm run dev
 3. Open in browser:
    http://localhost:5173/ (or the port shown in the terminal)
 
+4. for secure password:
+
+```bash
+npm install bcryptjs jsonwebtoken
+```
 
 If you get a permission error (execution policy issue), run:
 

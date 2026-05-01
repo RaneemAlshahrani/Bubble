@@ -3,14 +3,22 @@ const router = express.Router();
 
 const Product = require("../models/Product");
 const Order = require("../models/Order");
-// const User = require("../models/User"); // add this when you have User model
+const User = require("../models/User"); 
 
 router.get("/dashboard", async (req, res) => {
   try {
+    const { salesFilter = "all" } = req.query;
+
     const totalProducts = await Product.countDocuments();
     const totalOrders = await Order.countDocuments();
 
-    const revenue = await Order.aggregate([
+    const totalCustomers = await User.countDocuments({ role: "user" });
+    const totalAdmins = await User.countDocuments({ role: "admin" });
+    const totalCustomerService = await User.countDocuments({
+      role: "customer-service",
+    });
+
+    const revenueResult = await Order.aggregate([
       {
         $group: {
           _id: null,
@@ -19,7 +27,7 @@ router.get("/dashboard", async (req, res) => {
       },
     ]);
 
-    const totalSales = revenue[0]?.totalSales || 0;
+    const totalSales = revenueResult[0]?.totalSales || 0;
 
     const recentOrders = await Order.find()
       .sort({ createdAt: -1 })
@@ -46,7 +54,25 @@ router.get("/dashboard", async (req, res) => {
       },
     ]);
 
+    let matchStage = {};
+
+    if (salesFilter === "last6" || salesFilter === "last3") {
+      const now = new Date();
+      const monthsBack = salesFilter === "last6" ? 6 : 3;
+
+      const fromDate = new Date(
+        now.getFullYear(),
+        now.getMonth() - monthsBack + 1,
+        1
+      );
+
+      matchStage = {
+        createdAt: { $gte: fromDate, $lte: now },
+      };
+    }
+
     const monthlySales = await Order.aggregate([
+      { $match: matchStage },
       {
         $group: {
           _id: { $month: "$createdAt" },
@@ -60,27 +86,69 @@ router.get("/dashboard", async (req, res) => {
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
 
-    const salesChartData = monthNames.map((month, index) => {
-      const found = monthlySales.find((item) => item._id === index + 1);
+    let monthsToShow = monthNames;
+
+    if (salesFilter === "last6") {
+      const nowIdx = new Date().getMonth();
+      monthsToShow = [];
+      for (let i = 5; i >= 0; i--) {
+        monthsToShow.push(monthNames[(nowIdx - i + 12) % 12]);
+      }
+    } else if (salesFilter === "last3") {
+      const nowIdx = new Date().getMonth();
+      monthsToShow = [];
+      for (let i = 2; i >= 0; i--) {
+        monthsToShow.push(monthNames[(nowIdx - i + 12) % 12]);
+      }
+    }
+
+    const salesChartData = monthsToShow.map((month, index) => {
+      const found = monthlySales.find((m) => m._id === index + 1);
       return {
         month,
         sales: found ? found.sales : 0,
       };
     });
 
+    const totalUsers =
+      totalCustomers + totalAdmins + totalCustomerService;
+
+    const activityData = [
+      {
+        name: "Customers",
+        value: totalCustomers,
+        percent: totalUsers
+          ? Math.round((totalCustomers / totalUsers) * 100)
+          : 0,
+        color: "#5b2ff5",
+      },
+      {
+        name: "customer-service",
+        value: totalCustomerService,
+        percent: totalUsers
+          ? Math.round((totalCustomerService / totalUsers) * 100)
+          : 0,
+        color: "#8e3fd6",
+      },
+      {
+        name: "Admin",
+        value: totalAdmins,
+        percent: totalUsers
+          ? Math.round((totalAdmins / totalUsers) * 100)
+          : 0,
+        color: "#c45cc9",
+      },
+    ];
+
     res.status(200).json({
       totalSales,
       totalOrders,
-      totalCustomers: 0, // replace later with User.countDocuments({ role: "user" })
+      totalCustomers,
       totalProducts,
       recentOrders,
       topProducts,
       salesChartData,
-      activityData: [
-        { name: "Customers", value: 0, percent: 0, color: "#5b2ff5" },
-        { name: "customer-service", value: 0, percent: 0, color: "#8e3fd6" },
-        { name: "Admin", value: 0, percent: 0, color: "#c45cc9" },
-      ],
+      activityData,
     });
   } catch (error) {
     res.status(500).json({
