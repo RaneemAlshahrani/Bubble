@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import Button from "../components/Button";
 import soap from "../assets/soap-bliss.png";
+import { getCurrentUserId } from "../utils/auth";
 
 
 function Customize() {
     const navigate = useNavigate();
+    const userId = getCurrentUserId();
+    const isLoggedIn = !!userId;
 
     // Selected options state
     const [options, setOptions] = useState([]);
@@ -27,9 +30,6 @@ function Customize() {
     const ingredients = options.filter((option) => option.type === "ingredient");
 
     const isMobile = window.innerWidth <= 768;
-
-    // Simulated login state (change for testing)
-    const isLoggedIn = true;
 
     // Handle multi-select options
     const toggleMultiSelect = (value, selectedValues, setSelectedValues) => {
@@ -74,8 +74,13 @@ function Customize() {
         selectedIngredientsPrice;
 
     // Add customized product to cart
-    const handleAddToCart = async () => {
+     const handleAddToCart = async () => {
         if (!isValid) return;
+        if (!isLoggedIn) {
+            alert("Please login first");
+            navigate("/");
+            return;
+        }
 
         try {
             await fetch("http://localhost:5000/api/cart", {
@@ -84,7 +89,7 @@ function Customize() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    userId: "testUser",
+                    userId: userId,  // Use actual userId
                     productId: "69f2661394ab1e163aa40d03",
                     quantity: 1,
                     customOptions: {
