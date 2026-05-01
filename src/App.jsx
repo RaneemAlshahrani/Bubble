@@ -1,4 +1,6 @@
+// src/App.jsx - Make sure ProtectedRoute is used correctly
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Customize from "./pages/Customize";
@@ -19,30 +21,104 @@ import PromotionsManagement from "./pages/PromotionsManagement";
 import TicketManagement from "./pages/TicketManagement";
 import FAQTemplates from "./pages/FAQTemplates";
 
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/home" element={<Home />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/customize" element={<Customize />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/product-details/:id" element={<ProductDetails />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/order-history" element={<OrderHistory />} />
+        {/* Public Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/products" element={<ProductManagement />} />
-        <Route path="/admin/inventory" element={<InventoryManagement />} />
-        <Route path="/admin/reviews" element={<ReviewManagement />} />
-        <Route path="/admin/orders" element={<OrderManagement />} />
-        <Route path="/admin/promotions" element={<PromotionsManagement />} />
-        <Route path="/customer-service/tickets" element={<TicketManagement />} />
-        <Route path="/customer-service/faqs" element={<FAQTemplates />} />
+        
+        {/* Customer Routes */}
+        <Route path="/home" element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        } />
+        <Route path="/products" element={
+          <ProtectedRoute>
+            <Products />
+          </ProtectedRoute>
+        } />
+        <Route path="/customize" element={
+          <ProtectedRoute>
+            <Customize />
+          </ProtectedRoute>
+        } />
+        <Route path="/contact" element={
+          <ProtectedRoute>
+            <Contact />
+          </ProtectedRoute>
+        } />
+        <Route path="/product-details/:id" element={
+          <ProtectedRoute>
+            <ProductDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="/cart" element={
+          <ProtectedRoute>
+            <Cart />
+          </ProtectedRoute>
+        } />
+        <Route path="/checkout" element={
+          <ProtectedRoute>
+            <Checkout />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/order-history" element={
+          <ProtectedRoute>
+            <OrderHistory />
+          </ProtectedRoute>
+        } />
+        
+        {/* Admin Routes */}
+        <Route path="/admin-dashboard" element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/products" element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ProductManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/inventory" element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <InventoryManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/reviews" element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ReviewManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/orders" element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <OrderManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/promotions" element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <PromotionsManagement />
+          </ProtectedRoute>
+        } />
+        
+        {/* Customer Service Routes */}
+        <Route path="/customer-service/tickets" element={
+          <ProtectedRoute allowedRoles={["customer-service", "admin"]}>
+            <TicketManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/customer-service/faqs" element={
+          <ProtectedRoute allowedRoles={["customer-service", "admin"]}>
+            <FAQTemplates />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );

@@ -1,15 +1,18 @@
+// src/pages/Cart.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import bubble8 from "../assets/bubble8.png";
 import soap from "../assets/soap-bliss.png";
+import { getCurrentUserId } from "../utils/auth";
 
 function Cart() {
   const navigate = useNavigate();
   const isMobile = window.innerWidth <= 768;
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  const isLoggedIn = !!currentUser;
+  // Get actual logged-in user
+  const userId = getCurrentUserId();
+  const isLoggedIn = !!userId;
 
   const [discountCode, setDiscountCode] = useState("");
   const [discountMessage, setDiscountMessage] = useState("");
@@ -20,10 +23,13 @@ function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
 
+  // Fetch cart using actual user ID
   useEffect(() => {
+    if (!userId) return;
+    
     const fetchCart = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/cart/testUser");
+        const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
         const data = await response.json();
 
         setCartItems(
@@ -91,10 +97,15 @@ function Cart() {
     };
 
     fetchCart();
+  }, [userId]);
 
+  // Fetch wishlist using actual user ID
+  useEffect(() => {
+    if (!userId) return;
+    
     const fetchWishlist = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
         const data = await response.json();
 
         setWishlistItems(
@@ -103,7 +114,9 @@ function Cart() {
             productId: item.productId?._id,
             name: item.productId?.name,
             price: item.productId?.price || 0,
-            image: item.productId?.image,
+            image: item.productId?.image?.startsWith("http")
+              ? item.productId.image
+              : new URL(`../assets/${item.productId?.image}`, import.meta.url).href,
             stock: item.productId?.stock,
             quantity: item.quantity,
           }))
@@ -114,7 +127,7 @@ function Cart() {
     };
 
     fetchWishlist();
-  }, []);
+  }, [userId]);
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -275,6 +288,57 @@ function Cart() {
     }
   };
 
+  const addToCartFromWishlist = async (wishlistItem) => {
+    try {
+      // Check if item already in cart
+      const existingInCart = cartItems.find(item => item.name === wishlistItem.name);
+      
+      if (existingInCart) {
+        // Update quantity in cart
+        await updateCartQuantity(existingInCart, wishlistItem.quantity);
+      } else {
+        // Add to cart
+        const response = await fetch("http://localhost:5000/api/cart", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: userId,
+            productId: wishlistItem.productId,
+            quantity: wishlistItem.quantity,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to add to cart");
+      }
+
+      // Remove from wishlist
+      await removeWishlistItem(wishlistItem._id);
+      
+      // Refresh cart
+      const cartResponse = await fetch(`http://localhost:5000/api/cart/${userId}`);
+      const cartData = await cartResponse.json();
+      setCartItems(
+        cartData.map((item) => ({
+          _id: item._id,
+          name: item.productId?.name,
+          price: item.productId?.price || 0,
+          image: item.productId?.image?.startsWith("http")
+            ? item.productId.image
+            : new URL(`../assets/${item.productId?.image}`, import.meta.url).href,
+          stock: item.productId?.stock,
+          quantity: item.quantity,
+        }))
+      );
+
+      setCartMessage("Product moved to cart successfully");
+    } catch (error) {
+      console.error(error);
+      setCartMessage("Failed to move product to cart");
+    }
+  };
+
   const handleCheckout = () => {
     if (!isLoggedIn) {
       navigate("/");
@@ -412,6 +476,13 @@ function Cart() {
             <span>${subtotal.toFixed(2)}</span>
           </div>
 
+          {discountAmount > 0 && (
+            <div style={summaryRow}>
+              <span>Discount</span>
+              <span>-${discountAmount.toFixed(2)}</span>
+            </div>
+          )}
+
           <div style={summaryRow}>
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
@@ -463,7 +534,6 @@ function Cart() {
                               style={productImageStyle}
                             />
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-
                               <span style={{ fontWeight: "500", minWidth: "110px" }}>
                                 {item.name}
                               </span>
@@ -562,6 +632,7 @@ function Cart() {
                     <th style={thStyle}>Quantity</th>
                     <th style={thStyle}>Subtotal</th>
                     <th style={thStyle}></th>
+                    <th style={thStyle}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -615,6 +686,17 @@ function Cart() {
 
                         <td style={tdStyle}>
                           <button
+                            onClick={() => addToCartFromWishlist(item)}
+                            style={cartMoveBtn}
+                            disabled={item.stock === 0}
+                            title="Move to Cart"
+                          >
+                            🛒
+                          </button>
+                        </td>
+
+                        <td style={tdStyle}>
+                          <button
                             onClick={() => removeWishlistItem(item._id)}
                             style={trashBtn}
                           >
@@ -625,7 +707,7 @@ function Cart() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" style={tdStyle}>
+                      <td colSpan="6" style={tdStyle}>
                         Your wishlist is empty
                       </td>
                     </tr>
@@ -743,6 +825,13 @@ const trashBtn = {
   fontSize: "18px",
 };
 
+const cartMoveBtn = {
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
+  fontSize: "18px",
+};
+
 const successStyle = {
   color: "#39a86f",
   fontSize: "14px",
@@ -767,10 +856,6 @@ const customDetailsBox = {
   lineHeight: "1.5",
   textAlign: "left",
   maxWidth: "230px",
-};
-
-const customDetailLine = {
-  marginBottom: "2px",
 };
 
 export default Cart;

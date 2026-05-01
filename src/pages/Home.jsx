@@ -6,6 +6,7 @@ import heart from "../assets/heart.png";
 import heartFilled from "../assets/heart-filled.png";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentUserId } from "../utils/auth";
 
 const slideAnimation = `
   @keyframes slideIn {
@@ -16,8 +17,8 @@ const slideAnimation = `
 
 function Home() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  const isLoggedIn = !!currentUser;
+    const userId = getCurrentUserId();
+    const isLoggedIn = !!userId;
 
   const [products, setProducts] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,41 +49,58 @@ function Home() {
   }, [products]);
 
   useEffect(() => {
+    if (!userId || !product) return;
+    
     const checkWishlist = async () => {
-      if (!isLoggedIn || !product) { setLiked(false); return; }
       try {
-        const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
         const data = await response.json();
         setLiked(data.some((item) => item.productId?._id === product._id));
-      } catch (error) { console.error(error); }
+      } catch (error) { 
+        console.error(error); 
+      }
     };
+    
     checkWishlist();
     window.addEventListener("wishlistUpdated", checkWishlist);
     return () => window.removeEventListener("wishlistUpdated", checkWishlist);
-  }, [isLoggedIn, product]);
+  }, [userId, product]);
 
   const handleWishlist = async () => {
-    if (!isLoggedIn) { navigate("/"); return; }
+    if (!isLoggedIn) { 
+      navigate("/"); 
+      return; 
+    }
     if (!product) return;
+    
     try {
       if (liked) {
-        const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
         const data = await response.json();
         const wishlistItem = data.find((item) => item.productId?._id === product._id);
         if (wishlistItem) {
-          await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, { method: "DELETE" });
+          await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, { 
+            method: "DELETE" 
+          });
         }
         setLiked(false);
       } else {
         await fetch("http://localhost:5000/api/wishlist", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: "testUser", productId: product._id, quantity: 1 }),
+          body: JSON.stringify({ 
+            userId: userId,  // Use actual userId
+            productId: product._id, 
+            quantity: 1 
+          }),
         });
         setLiked(true);
       }
       window.dispatchEvent(new Event("wishlistUpdated"));
-    } catch (error) { console.error(error); alert("Failed to update wishlist"); }
+    } catch (error) { 
+      console.error(error); 
+      alert("Failed to update wishlist"); 
+    }
   };
 
   const handleAddToCart = () => {

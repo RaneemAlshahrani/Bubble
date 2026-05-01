@@ -1,6 +1,7 @@
-// Navigation bar component
+// src/components/Navbar.jsx
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { getCurrentUser, logout } from "../services/api";
 import logo from "../assets/bubble-logo.png";
 import cart from "../assets/cart.png";
 import profile from "../assets/profile-picture.png";
@@ -9,9 +10,10 @@ function Navbar() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -33,6 +35,13 @@ function Navbar() {
     { name: "Products", path: "/products" },
     { name: "Contact Us", path: "/contact" },
   ];
+
+  // Role-based navigation
+  if (currentUser?.role === "admin") {
+    links.push({ name: "Admin", path: "/admin-dashboard" });
+  } else if (currentUser?.role === "customer-service") {
+    links.push({ name: "Support", path: "/customer-service/tickets" });
+  }
 
   return (
     <>
@@ -61,7 +70,9 @@ function Navbar() {
           alt="Bubble Logo"
           style={{
             width: isMobile ? "70px" : "95px",
+            cursor: "pointer",
           }}
+          onClick={() => navigate("/home")}
         />
 
         {!isMobile && (

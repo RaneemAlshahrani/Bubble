@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getCurrentUserId } from "../utils/auth";
 import Button from "../components/Button";
 import bubble7 from "../assets/bubble7.png";
 import bubble8 from "../assets/bubble8.png";
@@ -10,6 +11,8 @@ import profile from "../assets/profile-picture.png";
 function ProductDetails() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const userId = getCurrentUserId();
+    const isLoggedIn = !!userId;
 
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
@@ -18,9 +21,6 @@ function ProductDetails() {
     const [addedToCart, setAddedToCart] = useState(false);
     const [reviewText, setReviewText] = useState("");
     const [liked, setLiked] = useState(false);
-
-    // Simulated login state (change for testing)
-    const isLoggedIn = true;
 
     // Handle screen resize
     useEffect(() => {
@@ -44,11 +44,12 @@ function ProductDetails() {
     }, [id]);
 
     useEffect(() => {
+        if (!userId || !id) return;
+        
         const checkWishlist = async () => {
             try {
-                const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
                 const data = await response.json();
-
                 const exists = data.some((item) => item.productId?._id === id);
                 setLiked(exists);
             } catch (error) {
@@ -56,16 +57,10 @@ function ProductDetails() {
             }
         };
 
-        if (id) {
-            checkWishlist();
-        }
-
+       checkWishlist();
         window.addEventListener("wishlistUpdated", checkWishlist);
-
-        return () => {
-            window.removeEventListener("wishlistUpdated", checkWishlist);
-        };
-    }, [id]);
+        return () => window.removeEventListener("wishlistUpdated", checkWishlist);
+    }, [userId, id]);
 
     if (!product) {
         return (
@@ -126,24 +121,23 @@ function ProductDetails() {
     const handleWishlistClick = async () => {
         if (!isLoggedIn) {
             alert("Please login first");
+            navigate("/");
             return;
         }
 
+
         try {
             if (liked) {
-                const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
                 const data = await response.json();
-
                 const wishlistItem = data.find(
                     (item) => item.productId?._id === product._id
                 );
-
                 if (wishlistItem) {
                     await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
                         method: "DELETE",
                     });
                 }
-
                 setLiked(false);
             } else {
                 await fetch("http://localhost:5000/api/wishlist", {
@@ -152,15 +146,13 @@ function ProductDetails() {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        userId: "testUser",
+                        userId: userId,  // Use actual userId
                         productId: product._id,
                         quantity: 1,
                     }),
                 });
-
                 setLiked(true);
             }
-
             window.dispatchEvent(new Event("wishlistUpdated"));
         } catch (error) {
             console.error(error);

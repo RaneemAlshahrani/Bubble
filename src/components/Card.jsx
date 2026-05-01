@@ -1,24 +1,26 @@
 // Product card component
+// src/components/Card.jsx
 import Button from "./Button";
 import heart from "../assets/heart.png";
 import heartFilled from "../assets/heart-filled.png";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { getCurrentUserId } from "../utils/auth";
 
 function Card({ product }) {
     const navigate = useNavigate();
     const [liked, setLiked] = useState(false);
-
-    // Simulated login state (change for testing)
-    const isLoggedIn = true;
+    const userId = getCurrentUserId();
+    const isLoggedIn = !!userId;
 
     // Check if product is in wishlist
     useEffect(() => {
+        if (!userId) return;
+        
         const checkWishlist = async () => {
             try {
-                const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
                 const data = await response.json();
-
                 const exists = data.some((item) => item.productId?._id === product._id);
                 setLiked(exists);
             } catch (error) {
@@ -27,30 +29,31 @@ function Card({ product }) {
         };
 
         checkWishlist();
-    }, [product._id]);
+        
+        window.addEventListener("wishlistUpdated", checkWishlist);
+        return () => window.removeEventListener("wishlistUpdated", checkWishlist);
+    }, [product._id, userId]);
 
     // Toggle wishlist
     const handleWishlistClick = async () => {
         if (!isLoggedIn) {
             alert("Please login first");
+            navigate("/");
             return;
         }
 
         try {
             if (liked) {
-                const response = await fetch("http://localhost:5000/api/wishlist/testUser");
+                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
                 const data = await response.json();
-
                 const wishlistItem = data.find(
                     (item) => item.productId?._id === product._id
                 );
-
                 if (wishlistItem) {
                     await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
                         method: "DELETE",
                     });
                 }
-
                 setLiked(false);
             } else {
                 await fetch("http://localhost:5000/api/wishlist", {
@@ -59,12 +62,11 @@ function Card({ product }) {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        userId: "testUser",
+                        userId: userId,
                         productId: product._id,
                         quantity: 1,
                     }),
                 });
-
                 setLiked(true);
             }
             
@@ -74,10 +76,12 @@ function Card({ product }) {
             alert("Failed to update wishlist");
         }
     };
+    
     // Add product to cart
     const handleAddToCart = async () => {
         if (!isLoggedIn) {
             alert("Please login first");
+            navigate("/");
             return;
         }
 
@@ -88,7 +92,7 @@ function Card({ product }) {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    userId: "testUser",
+                    userId: userId,
                     productId: product._id,
                     quantity: 1,
                 }),
@@ -105,6 +109,7 @@ function Card({ product }) {
         }
     };
 
+    // Rest of your component remains the same...
     return (
         <div
             style={{
@@ -126,7 +131,6 @@ function Card({ product }) {
                     height: "24px",
                 }}
             >
-                {/* Wishlist icon */}
                 {!product.customizable && (
                     <img
                         src={liked ? heartFilled : heart}
@@ -212,7 +216,6 @@ function Card({ product }) {
                     marginTop: "20px",
                 }}
             >
-                {/* Customize product */}
                 {product.customizable ? (
                     <Button
                         text="Customize"

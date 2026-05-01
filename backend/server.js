@@ -9,6 +9,7 @@ const wishlistRoutes = require("./routes/wishlist");
 const adminRoutes = require("./routes/admin");
 
 const productRoutes = require("./routes/products");
+const authRoutes = require("./routes/auth");
 
 const app = express(); 
 
@@ -22,6 +23,7 @@ app.use("/api/custom-options", customOptionRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend is working 🚀");
