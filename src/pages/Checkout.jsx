@@ -1,50 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import rose from "../assets/rose.png";
-import lavender from "../assets/lavender.png";
-import rosemary from "../assets/rosemary.png";
 import soap from "../assets/soap-bliss.png";
 import bubble8 from "../assets/bubble8.png";
+import { getCurrentUserId } from "../utils/auth";
 
 function Checkout() {
   const navigate = useNavigate();
   const isMobile = window.innerWidth <= 768;
 
-  const allProducts = [
-    {
-      id: 1,
-      name: "Sakura Bliss",
-      price: 30,
-      image: rose,
-      stock: 10,
-      inStock: true,
-    },
-    {
-      id: 2,
-      name: "Lavender Bliss",
-      price: 30,
-      image: lavender,
-      stock: 0,
-      inStock: false,
-    },
-    {
-      id: 3,
-      name: "Rosemary Bliss",
-      price: 50,
-      image: rosemary,
-      stock: 10,
-      inStock: true,
-    },
-    {
-      id: 4,
-      name: "Soap Bliss",
-      price: 7,
-      image: soap,
-      stock: 10,
-      inStock: true,
-    },
-  ];
+  const userId = getCurrentUserId();
 
   const [cartItems, setCartItems] = useState([]);
   const [discountCode, setDiscountCode] = useState("");
@@ -68,8 +33,6 @@ function Checkout() {
   const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem("cartItems")) || [];
-
     const savedProfile =
       JSON.parse(localStorage.getItem("checkoutProfile")) ||
       JSON.parse(localStorage.getItem("profileData")) || {
@@ -79,23 +42,42 @@ function Checkout() {
         location: "",
       };
 
-    setCartItems(storedCart);
     setForm(savedProfile);
   }, []);
 
-  const cartWithDetails = cartItems
-    .map((item) => {
-      const product = allProducts.find((p) => p.id === item.id);
-      if (!product) return null;
+  useEffect(() => {
+    if (!userId) return;
 
-      return {
-        ...item,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-      };
-    })
-    .filter(Boolean);
+    const fetchCart = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
+        const data = await response.json();
+
+        const formattedCart = data.map((item) => {
+          const product = item.productId;
+
+          return {
+            _id: item._id,
+            productId: product?._id,
+            name: product?.name || "Unknown Product",
+            price: product?.price || 0,
+            image: product?.image?.startsWith("http") ? product.image : soap,
+            stock: product?.stock || 0,
+            quantity: item.quantity,
+            customOptions: item.customOptions,
+          };
+        });
+
+        setCartItems(formattedCart);
+      } catch (error) {
+        console.error("Failed to fetch checkout cart:", error);
+      }
+    };
+
+    fetchCart();
+  }, [userId]);
+
+  const cartWithDetails = cartItems;
 
   const subtotal = cartWithDetails.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -104,7 +86,7 @@ function Checkout() {
 
   const total = Math.max(subtotal - discountAmount, 0);
 
-  const handleDiscountApply = () => {
+  const handleDiscountApply = async () => {
     setDiscountMessage("");
     setDiscountError("");
 
@@ -116,41 +98,48 @@ function Checkout() {
       return;
     }
 
-    const storedPromos =
-      JSON.parse(localStorage.getItem("promoCodes")) || [];
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/promotions");
+      const promos = await response.json();
 
-    const promo = storedPromos.find((p) => p.code === code);
+      const promo = promos.find(
+        (p) => String(p.code).trim().toLowerCase() === code
+      );
 
-    if (!promo) {
-      setDiscountError("Invalid discount code");
-      setDiscountAmount(0);
-      return;
+      if (!promo) {
+        setDiscountError("Invalid discount code");
+        setDiscountAmount(0);
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const expiryDate = new Date(promo.expiry);
+      expiryDate.setHours(0, 0, 0, 0);
+
+      if (expiryDate < today || promo.active === false) {
+        setDiscountError("Promo code expired");
+        setDiscountAmount(0);
+        return;
+      }
+
+      const percent = Number(promo.value);
+
+      if (Number.isNaN(percent) || percent <= 0) {
+        setDiscountError("Invalid discount value");
+        setDiscountAmount(0);
+        return;
+      }
+
+      const amount = subtotal * (percent / 100);
+
+      setDiscountAmount(amount);
+      setDiscountMessage("Discount applied successfully");
+    } catch (error) {
+      console.error(error);
+      setDiscountError("Failed to apply discount");
     }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const expiryDate = new Date(promo.expiry);
-    expiryDate.setHours(0, 0, 0, 0);
-
-    if (expiryDate < today) {
-      setDiscountError("Promo code expired");
-      setDiscountAmount(0);
-      return;
-    }
-
-    const percent = parseFloat(String(promo.value).replace("%", ""));
-
-    if (isNaN(percent) || percent <= 0) {
-      setDiscountError("Invalid discount value");
-      setDiscountAmount(0);
-      return;
-    }
-
-    const amount = subtotal * (percent / 100);
-
-    setDiscountAmount(amount);
-    setDiscountMessage("Discount applied successfully");
   };
 
   const handleChange = (e) => {
@@ -245,79 +234,89 @@ function Checkout() {
     setSaveMessage("Saved!");
   };
 
-  const generateOrderId = () => {
-    return `#${Math.floor(1000 + Math.random() * 9000)}`;
+  const clearCartAfterOrder = async () => {
+    await Promise.all(
+      cartWithDetails.map((item) =>
+        fetch(`http://localhost:5000/api/cart/${item._id}`, {
+          method: "DELETE",
+        })
+      )
+    );
   };
 
-const handlePayConfirm = () => {
-  setOrderMessage("");
-  setOrderError("");
-  setFormError("");
-  setEmailError("");
-  setPhoneError("");
+  const handlePayConfirm = async () => {
+    setOrderMessage("");
+    setOrderError("");
+    setFormError("");
+    setEmailError("");
+    setPhoneError("");
 
-  if (cartWithDetails.length === 0) {
-    setOrderError("Cart is empty");
-    return;
-  }
+    if (!userId) {
+      setOrderError("Please login first");
+      return;
+    }
 
-  if (!form.fullName || !form.email || !form.phone || !form.location) {
-    setFormError("Please fill all shipping information");
-    return;
-  }
+    if (cartWithDetails.length === 0) {
+      setOrderError("Cart is empty");
+      return;
+    }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(form.email)) {
-    setEmailError("Invalid email address");
-    return;
-  }
+    if (!form.fullName || !form.email || !form.phone || !form.location) {
+      setFormError("Please fill all shipping information");
+      return;
+    }
 
-  const phoneRegex = /^\d{10}$/;
-  if (!phoneRegex.test(form.phone)) {
-    setPhoneError("Invalid phone number");
-    return;
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setEmailError("Invalid email address");
+      return;
+    }
 
-  const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(form.phone)) {
+      setPhoneError("Invalid phone number");
+      return;
+    }
 
-  const newOrder = {
-    id: generateOrderId(),
-    date: new Date().toISOString(),
-    items: cartWithDetails.map((item) => ({
-      productId: item.id,
-      item: item.name,
-      quantity: item.quantity,
-      unitPrice: item.price,
-      subtotal: item.price * item.quantity,
-    })),
-    subtotal,
-    discountAmount,
-    total,
-    status: "Shipped",
-    customer: {
-      fullName: form.fullName,
-      email: form.email,
-      phone: form.phone,
-      location: form.location,
-    },
+    try {
+      const response = await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          items: cartWithDetails.map((item) => ({
+            productId: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            customization: item.customOptions,
+          })),
+          totalPrice: total,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to place order");
+      }
+
+      await clearCartAfterOrder();
+
+      localStorage.setItem("checkoutProfile", JSON.stringify(form));
+      localStorage.setItem("profileData", JSON.stringify(form));
+
+      setCartItems([]);
+      setDiscountCode("");
+      setDiscountAmount(0);
+      setDiscountMessage("");
+      setDiscountError("");
+      setOrderMessage("Order placed successfully");
+    } catch (error) {
+      console.error(error);
+      setOrderError("Failed to place order");
+    }
   };
-
-  localStorage.setItem(
-    "orders",
-    JSON.stringify([newOrder, ...existingOrders])
-  );
-
-  localStorage.setItem("checkoutProfile", JSON.stringify(form));
-  localStorage.setItem("profileData", JSON.stringify(form));
-  localStorage.removeItem("cartItems");
-
-  setCartItems([]);
-  setDiscountCode("");
-  setDiscountAmount(0);
-  setDiscountMessage("");
-  setDiscountError("");
-  setOrderMessage("Order placed successfully");
-};
 
   return (
     <div
@@ -436,6 +435,13 @@ const handlePayConfirm = () => {
             <span>${subtotal.toFixed(2)}</span>
           </div>
 
+          {discountAmount > 0 && (
+            <div style={summaryRow}>
+              <span>Discount</span>
+              <span>-${discountAmount.toFixed(2)}</span>
+            </div>
+          )}
+
           <div style={summaryRow}>
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
@@ -476,7 +482,7 @@ const handlePayConfirm = () => {
                 <tbody>
                   {cartWithDetails.length > 0 ? (
                     cartWithDetails.map((item) => (
-                      <tr key={item.id}>
+                      <tr key={item._id}>
                         <td style={tdStyle}>
                           <div style={productCell}>
                             <img
@@ -484,9 +490,38 @@ const handlePayConfirm = () => {
                               alt={item.name}
                               style={productImageStyle}
                             />
-                            <span>{item.name}</span>
+                            <div>
+                              <span>{item.name}</span>
+
+                              {item.customOptions && (
+                                <div style={customDetailsBox}>
+                                  {item.customOptions.scents?.length > 0 && (
+                                    <div>
+                                      <strong>Scent:</strong>{" "}
+                                      {item.customOptions.scents.join(", ")}
+                                    </div>
+                                  )}
+
+                                  {item.customOptions.texture && (
+                                    <div>
+                                      <strong>Texture:</strong>{" "}
+                                      {item.customOptions.texture}
+                                    </div>
+                                  )}
+
+                                  {item.customOptions.ingredients?.length >
+                                    0 && (
+                                    <div>
+                                      <strong>Ingredients:</strong>{" "}
+                                      {item.customOptions.ingredients.join(", ")}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
+
                         <td style={tdStyle}>${item.price.toFixed(2)}</td>
                         <td style={tdStyle}>{item.quantity}</td>
                         <td style={tdStyle}>
@@ -607,6 +642,7 @@ const handlePayConfirm = () => {
                     📍
                   </span>
                 </div>
+
                 {locationLoading && (
                   <p style={{ ...successStyle, marginTop: "6px" }}>
                     Getting location...
@@ -630,6 +666,7 @@ const handlePayConfirm = () => {
                 style={{ width: "120px" }}
                 onClick={handleSave}
               />
+
               {saveMessage && (
                 <p style={{ ...successStyle, margin: 0 }}>{saveMessage}</p>
               )}
@@ -650,9 +687,11 @@ const handlePayConfirm = () => {
                 style={{ width: "170px" }}
                 onClick={handlePayConfirm}
               />
+
               {orderMessage && (
                 <p style={{ ...successStyle, margin: 0 }}>{orderMessage}</p>
               )}
+
               {orderError && <p style={{ ...errorStyle, margin: 0 }}>{orderError}</p>}
             </div>
           </div>
@@ -767,6 +806,18 @@ const errorStyle = {
   color: "#ff3d2e",
   fontSize: "13px",
   fontWeight: "500",
+};
+
+const customDetailsBox = {
+  marginTop: "6px",
+  padding: "6px 8px",
+  borderRadius: "10px",
+  background: "rgba(255,255,255,0.35)",
+  color: "#555",
+  fontSize: "12px",
+  lineHeight: "1.5",
+  textAlign: "left",
+  maxWidth: "230px",
 };
 
 export default Checkout;
