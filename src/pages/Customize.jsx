@@ -74,23 +74,17 @@ function Customize() {
         selectedIngredientsPrice;
 
     // Add customized product to cart
-     const handleAddToCart = async () => {
+    const handleAddToCart = async () => {
         if (!isValid) return;
-        if (!isLoggedIn) {
-            alert("Please login first");
-            navigate("/");
-            return;
-        }
 
         try {
-            await fetch("http://localhost:5000/api/cart", {
+            const res = await fetch("http://localhost:5000/api/cart", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    userId: userId,  // Use actual userId
-                    productId: "69f2661394ab1e163aa40d03",
+                    userId: userId,
                     quantity: 1,
                     customOptions: {
                         scents: selectedScents,
@@ -101,9 +95,27 @@ function Customize() {
                 }),
             });
 
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.message);
+
+                const optionsRes = await fetch("http://localhost:5000/api/custom-options");
+                const updatedOptions = await optionsRes.json();
+                setOptions(updatedOptions);
+
+                setSelectedScents(prev =>
+                    prev.filter(s => s !== "Lavender")
+                );
+
+                return;
+            }
+
             setAddedToCart(true);
+
         } catch (err) {
             console.error(err);
+            alert("Error adding to cart");
         }
     };
 
