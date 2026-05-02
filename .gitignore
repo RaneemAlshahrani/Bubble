@@ -8,3 +8,4 @@ backend/uploads/
 backend/.env
 node_modules
 >>>>>>> 6eb1bd11bf3cf9c16a254de4dd837f9346ec6ce1
+.vercel
