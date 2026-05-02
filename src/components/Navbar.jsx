@@ -6,6 +6,7 @@ import { CartIcon, ProfileIcon, MenuIcon, CloseIcon, LogoutIcon } from "./Dynami
 import logo from "../assets/bubble-logo.png";
 
 function Navbar() {
+  const [supportOpen, setSupportOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false); // ✅ added
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -36,9 +37,7 @@ function Navbar() {
     { name: "Products", path: "/products" },
     { name: "Contact Us", path: "/contact" },
   ];
-if (currentUser?.role === "customer-service") {
-  links.push({ name: "Support", path: "/customer-service/tickets" });
-}
+
   return (
     <>
       <nav
@@ -207,6 +206,47 @@ if (currentUser?.role === "customer-service") {
               )}
             </>
           )}
+
+          {/* ✅ Support expandable */}
+{currentUser?.role === "customer-service" && (
+  <>
+    <div
+      onClick={() => setSupportOpen(!supportOpen)}
+      style={{ padding: "8px", cursor: "pointer", fontWeight: "600" }}
+    >
+      Support {supportOpen ? "▲" : "▼"}
+    </div>
+
+    {supportOpen && (
+      <div style={{
+        paddingLeft: "10px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "6px"
+      }}>
+        <div
+          onClick={() => {
+            navigate("/customer-service/tickets");
+            setMenuOpen(false);
+          }}
+          style={{ cursor: "pointer", padding: "6px 0" }}
+        >
+          Tickets
+        </div>
+
+        <div
+          onClick={() => {
+            navigate("/customer-service/faqs");
+            setMenuOpen(false);
+          }}
+          style={{ cursor: "pointer", padding: "6px 0" }}
+        >
+          FAQs
+        </div>
+      </div>
+    )}
+  </>
+)}
         </div>
       )}
     </>
