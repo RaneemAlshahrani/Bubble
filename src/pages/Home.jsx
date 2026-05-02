@@ -27,6 +27,8 @@ function Home() {
   const [cartMessage, setCartMessage] = useState("");
   const intervalRef = useRef(null);
 
+  const isMobile = window.innerWidth <= 768;
+
   const product = products[currentIndex] || null;
 
   useEffect(() => {
@@ -80,7 +82,7 @@ function Home() {
         const wishlistItem = data.find((item) => item.productId?._id === product._id);
         if (wishlistItem) {
           await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
-            method: "DELETE"
+            method: "DELETE",
           });
         }
         setLiked(false);
@@ -89,9 +91,9 @@ function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: userId,  // Use actual userId
+            userId: userId,
             productId: product._id,
-            quantity: 1
+            quantity: 1,
           }),
         });
         setLiked(true);
@@ -125,7 +127,6 @@ function Home() {
 
       setCartMessage("Added to cart");
       setTimeout(() => setCartMessage(""), 2000);
-
     } catch (error) {
       console.error(error);
       alert("Failed to add to cart");
@@ -133,7 +134,10 @@ function Home() {
   };
 
   const handleMoreDetails = () => {
-    if (!isLoggedIn) { navigate("/"); return; }
+    if (!isLoggedIn) {
+      navigate("/");
+      return;
+    }
     if (!product) return;
     navigate(`/product-details/${product._id}`);
   };
@@ -149,79 +153,185 @@ function Home() {
   };
 
   return (
-    <div className="pink-page" style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+    <div
+      className="pink-page"
+      style={{
+        minHeight: "100vh",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
       <style>{slideAnimation}</style>
-      <Navbar />
 
-      <img src={bubble7} alt="bubble left"
-        style={{ position: "absolute", left: "5px", bottom: "20px", width: "500px", opacity: 0.9, zIndex: 0, pointerEvents: "none" }} />
-      <img src={bubble8} alt="bubble right"
-        style={{ position: "absolute", right: "2px", top: "20px", width: "500px", opacity: 0.9, zIndex: 0, pointerEvents: "none" }} />
+      {/* Fixed Navbar */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          zIndex: 1000,
+        }}
+      >
+        <Navbar />
+      </div>
 
-      <div style={{
-        minHeight: "100vh", display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        paddingTop: "40px", position: "relative", zIndex: 2
-      }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingTop: "40px",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        {/* Background bubbles */}
+        <img
+          src={bubble7}
+          alt="bubble left"
+          style={{
+            position: "absolute",
+            left: "5px",
+            bottom: "20px",
+            width: "35vw",
+            maxWidth: "500px",
+            opacity: 0.9,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+        <img
+          src={bubble8}
+          alt="bubble right"
+          style={{
+            position: "absolute",
+            right: "2px",
+            top: "20px",
+            width: "35vw",
+            maxWidth: "500px",
+            opacity: 0.9,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
 
-        {product && (
-          <img
-            key={animKey}
-            src={product.image}
-            alt={product.name}
+        {/* Main content */}
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingTop: "40px",
+            marginTop: "80px",
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
+          {product && (
+            <img
+              key={animKey}
+              src={product.image}
+              alt={product.name}
+              style={{
+                width: "90%",
+                maxWidth: "560px",
+                filter: "drop-shadow(0px 20px 40px rgba(0,0,0,0.18))",
+                marginBottom: "10px",
+                pointerEvents: "none",
+                animation: "slideIn 0.6s cubic-bezier(0.22,1,0.36,1) both",
+              }}
+            />
+          )}
+
+          {/* Buttons */}
+          <div
             style={{
-              width: "560px", maxWidth: "100%",
-              filter: "drop-shadow(0px 20px 40px rgba(0,0,0,0.18))",
-              marginBottom: "10px", pointerEvents: "none",
-              animation: "slideIn 0.6s cubic-bezier(0.22,1,0.36,1) both",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              position: "absolute",
+              bottom: isMobile ? "40px" : "80px",
             }}
-          />
-        )}
+          >
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Button text="Add to Cart" variant="primary" onClick={handleAddToCart} />
+              {cartMessage && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "110%",
+                    color: "#226944",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {cartMessage}
+                </span>
+              )}
+            </div>
 
-        {/* Buttons - ثابتة */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: "12px",
-          flexWrap: "wrap", justifyContent: "center",
-          position: "absolute", bottom: "80px"
-        }}>
-          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <Button text="Add to Cart" variant="primary" onClick={handleAddToCart} />
-            {cartMessage && (
-              <span style={{
-                position: "absolute", top: "110%", color: "#226944",
-                fontSize: "14px", fontWeight: "500", whiteSpace: "nowrap"
-              }}>
-                {cartMessage}
-              </span>
-            )}
+            <Button text="More Details" variant="secondary" onClick={handleMoreDetails} />
+
+            <img
+              src={liked ? heartFilled : heart}
+              alt="wishlist"
+              onClick={handleWishlist}
+              style={{
+                width: "22px",
+                height: "22px",
+                cursor: "pointer",
+                transition: "0.3s",
+                transform: liked ? "scale(1.2)" : "scale(1)",
+                opacity: liked ? 1 : 0.7,
+              }}
+            />
           </div>
-          <Button text="More Details" variant="secondary" onClick={handleMoreDetails} />
-          <img src={liked ? heartFilled : heart} alt="wishlist" onClick={handleWishlist}
-            style={{
-              width: "22px", height: "22px", cursor: "pointer", transition: "0.3s",
-              transform: liked ? "scale(1.2)" : "scale(1)", opacity: liked ? 1 : 0.7
-            }} />
+
+          {/* Dots */}
+          {products.length > 1 && (
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                position: "absolute",
+                bottom: isMobile ? "10px" : "40px",
+              }}
+            >
+              {products.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goTo(i)}
+                  style={{
+                    width: i === currentIndex ? "24px" : "8px",
+                    height: "8px",
+                    borderRadius: "4px",
+                    border: "none",
+                    background:
+                      i === currentIndex ? "#8B3A52" : "rgba(139,58,82,0.3)",
+                    cursor: "pointer",
+                    padding: 0,
+                    transition: "all 0.3s ease",
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* Dots - ثابتة */}
-        {products.length > 1 && (
-          <div style={{
-            display: "flex", gap: "8px",
-            position: "absolute", bottom: "40px"
-          }}>
-            {products.map((_, i) => (
-              <button key={i} onClick={() => goTo(i)}
-                style={{
-                  width: i === currentIndex ? "24px" : "8px",
-                  height: "8px", borderRadius: "4px", border: "none",
-                  background: i === currentIndex ? "#8B3A52" : "rgba(139,58,82,0.3)",
-                  cursor: "pointer", padding: 0,
-                  transition: "all 0.3s ease",
-                }}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

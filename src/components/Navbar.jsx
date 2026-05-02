@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { getCurrentUser, logout } from "../services/api";
@@ -7,8 +6,7 @@ import cart from "../assets/cart.png";
 import profile from "../assets/profile-picture.png";
 
 function Navbar() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
 
@@ -17,18 +15,19 @@ function Navbar() {
     navigate("/");
   };
 
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      if (!mobile) {
-        setMenuOpen(false);
-      }
-    };
+useEffect(() => {
+  const media = window.matchMedia("(max-width: 768px)");
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const handleChange = () => {
+    setIsMobile(media.matches);
+    if (!media.matches) setMenuOpen(false);
+  };
+
+  handleChange(); // 🔥 important (runs on first load)
+  media.addEventListener("change", handleChange);
+
+  return () => media.removeEventListener("change", handleChange);
+}, []);
 
   const links = [
     { name: "Home", path: "/home" },
@@ -36,7 +35,6 @@ function Navbar() {
     { name: "Contact Us", path: "/contact" },
   ];
 
-  // Role-based navigation
   if (currentUser?.role === "admin") {
     links.push({ name: "Admin", path: "/admin-dashboard" });
   } else if (currentUser?.role === "customer-service") {
@@ -50,31 +48,38 @@ function Navbar() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: isMobile ? "8px 14px" : "10px 22px",
-          margin: isMobile ? "10px auto" : "16px auto",
-          maxWidth: isMobile ? "95%" : "1000px",
-          width: isMobile ? "95%" : "90%",
+
+          padding: "clamp(6px, 2vw, 10px) clamp(10px, 3vw, 22px)",
+          margin: "clamp(6px, 2vw, 16px) auto",
+
+          maxWidth: "1000px",
+          width: "90%",
+
           position: "fixed",
           top: 0,
           left: "50%",
           transform: "translateX(-50%)",
+
           background: "rgba(255, 255, 255, 0.12)",
           border: "1px solid rgba(255,255,255,0.25)",
-          borderRadius: isMobile ? "22px" : "30px",
+          borderRadius: "clamp(16px, 4vw, 30px)",
+
           backdropFilter: "blur(12px)",
           zIndex: 100,
         }}
       >
+        {/* Logo */}
         <img
           src={logo}
           alt="Bubble Logo"
           style={{
-            width: isMobile ? "70px" : "95px",
+            width: "clamp(55px, 12vw, 95px)", // ✅ smaller
             cursor: "pointer",
           }}
           onClick={() => navigate("/home")}
         />
 
+        {/* Desktop links */}
         {!isMobile && (
           <div
             style={{
@@ -95,6 +100,7 @@ function Navbar() {
                   fontWeight: isActive ? 700 : 400,
                   textDecoration: isActive ? "underline" : "none",
                   transition: "all 0.3s ease",
+                  fontSize: "15px",
                 })}
               >
                 {link.name}
@@ -103,12 +109,15 @@ function Navbar() {
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {/* Right side */}
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "6px" : "10px" }}>
+          
+          {/* Mobile menu icon */}
           {isMobile && (
             <div
               onClick={() => setMenuOpen(!menuOpen)}
               style={{
-                fontSize: "22px",
+                fontSize: "20px", // ✅ smaller
                 cursor: "pointer",
                 color: "#333",
               }}
@@ -117,40 +126,42 @@ function Navbar() {
             </div>
           )}
 
+          {/* Cart */}
           <img
             src={cart}
             alt="Cart"
             onClick={() => navigate("/cart")}
             style={{
-              width: isMobile ? "20px" : "24px",
-              objectFit: "contain",
+              width: "clamp(16px, 4vw, 24px)", // ✅ smaller
               cursor: "pointer",
             }}
           />
 
+          {/* Profile */}
           <img
             src={profile}
             alt="Profile"
             onClick={() => navigate("/profile")}
             style={{
-              width: isMobile ? "26px" : "34px",
-              height: isMobile ? "26px" : "34px",
+              width: "clamp(22px, 6vw, 34px)",
+              height: "clamp(22px, 6vw, 34px)",
               borderRadius: "50%",
               objectFit: "cover",
               cursor: "pointer",
             }}
           />
 
+          {/* Logout */}
           <button
             onClick={handleLogout}
             style={{
-              padding: isMobile ? "8px 18px" : "10px 24px",
+              padding: "clamp(5px, 1.5vw, 10px) clamp(10px, 3vw, 24px)",
               borderRadius: "30px",
               border: "1px solid rgba(255,255,255,0.4)",
               background: "rgba(255,255,255,0.08)",
               backdropFilter: "blur(12px)",
               color: "#3b3b3b",
-              fontSize: isMobile ? "14px" : "16px",
+              fontSize: isMobile ? "12px" : "16px", // ✅ smaller text
               fontFamily: "Josefin Sans, sans-serif",
               cursor: "pointer",
               transition: "all 0.3s ease",
@@ -167,21 +178,22 @@ function Navbar() {
         </div>
       </nav>
 
+      {/* Mobile dropdown */}
       {isMobile && menuOpen && (
         <div
           style={{
             position: "fixed",
-            top: "70px",
+            top: "60px", // ✅ adjusted with smaller navbar
             left: "50%",
             transform: "translateX(-50%)",
             width: "90%",
             background: "rgba(255,255,255,0.15)",
             backdropFilter: "blur(12px)",
-            borderRadius: "20px",
-            padding: "15px",
+            borderRadius: "16px",
+            padding: "12px",
             display: "flex",
             flexDirection: "column",
-            gap: "12px",
+            gap: "10px",
             textAlign: "center",
             zIndex: 99,
           }}
@@ -196,7 +208,7 @@ function Navbar() {
                 color: isActive ? "#fff" : "#2e3d4c",
                 fontWeight: isActive ? 700 : 400,
                 textDecoration: "none",
-                transition: "all 0.3s ease",
+                fontSize: "14px",
               })}
             >
               {link.name}
@@ -206,16 +218,14 @@ function Navbar() {
           <button
             onClick={handleLogout}
             style={{
-              padding: "10px 20px",
+              padding: "8px 16px",
               borderRadius: "30px",
               border: "1px solid rgba(255,255,255,0.4)",
               background: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(12px)",
               color: "#3b3b3b",
-              fontSize: "15px",
+              fontSize: "13px",
               fontFamily: "Josefin Sans, sans-serif",
               cursor: "pointer",
-              transition: "all 0.3s ease",
             }}
           >
             Logout
