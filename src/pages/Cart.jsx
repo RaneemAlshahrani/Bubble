@@ -30,7 +30,7 @@ function Cart() {
       setLoading(false);
       return;
     }
-    
+
     const fetchCart = async () => {
       try {
         const token = getAuthToken();
@@ -40,32 +40,18 @@ function Cart() {
         const data = await response.json();
 
         const formattedItems = data.map((item) => {
-          const isCustom = item.productId?.name === "Custom Soap";
-          const basePrice = item.productId?.price || 0;
-
-          const scentPrices = { Lavender: 1, Coconut: 1, Rose: 1, Honey: 2 };
-          const ingredientPrices = {
-            "Shea Butter": 2, Sugar: 1, "Aloe Vera": 2,
-            Oils: 1, "Vitamin E": 2, "Coconut Oil": 2, Charcoal: 3
-          };
-
-          const scentsTotal = (item.customOptions?.scents || []).reduce(
-            (sum, s) => sum + (scentPrices[s] || 0), 0
-          );
-          const ingredientsTotal = (item.customOptions?.ingredients || []).reduce(
-            (sum, i) => sum + (ingredientPrices[i] || 0), 0
-          );
-          const texturePrice = item.customOptions?.texture === "Scrub" ? 2 : 0;
-          const optionsPrice = scentsTotal + ingredientsTotal + texturePrice;
+          const isCustom = !!item.customOptions;
 
           return {
             _id: item._id,
-            name: item.productId?.name,
-            price: basePrice + optionsPrice,
-            image: isCustom ? soap : (item.productId?.image?.startsWith("http") 
-              ? item.productId.image 
-              : new URL(`../assets/${item.productId?.image}`, import.meta.url).href),
-            stock: item.productId?.stock,
+            name: isCustom ? "Custom Soap" : item.productId?.name,
+            price: isCustom ? item.customPrice : item.productId?.price,
+            image: isCustom
+              ? soap
+              : item.productId?.image?.startsWith("http")
+                ? item.productId.image
+                : new URL(`../assets/${item.productId?.image}`, import.meta.url).href,
+            stock: isCustom ? 999 : item.productId?.stock,
             quantity: item.quantity,
             customOptions: item.customOptions,
           };
@@ -85,7 +71,7 @@ function Cart() {
   // Fetch wishlist
   useEffect(() => {
     if (!userId) return;
-    
+
     const fetchWishlist = async () => {
       try {
         const token = getAuthToken();
@@ -119,7 +105,7 @@ function Cart() {
   const handleDiscountApply = async () => {
     setDiscountMessage("");
     setDiscountError("");
-    
+
     const code = discountCode.trim().toLowerCase();
     if (!code) {
       setDiscountError("Please enter a discount code");
@@ -223,7 +209,7 @@ function Cart() {
   const addToCartFromWishlist = async (wishlistItem) => {
     try {
       const token = getAuthToken();
-      
+
       const response = await fetch("http://localhost:5000/api/cart", {
         method: "POST",
         headers: {
@@ -240,13 +226,13 @@ function Cart() {
       if (!response.ok) throw new Error("Failed to add to cart");
 
       await removeWishlistItem(wishlistItem._id);
-      
+
       // Refresh cart
       const cartResponse = await fetch(`http://localhost:5000/api/cart/${userId}`, {
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
       const cartData = await cartResponse.json();
-      
+
       setCartItems(cartData.map(item => ({
         _id: item._id,
         name: item.productId?.name,

@@ -6,7 +6,7 @@ const CustomOption = require("../models/CustomOption");
 // Add to cart
 router.post("/", async (req, res) => {
   try {
-    const { userId, productId, quantity, customOptions } = req.body;
+    const { userId, productId, quantity, customOptions, customPrice } = req.body;
     const qty = quantity || 1;
 
     // If customized soap, check and decrease selected option stocks
@@ -62,6 +62,7 @@ router.post("/", async (req, res) => {
       productId,
       quantity: qty,
       customOptions,
+      customPrice: customPrice || 0,
     });
 
     await cartItem.save();
