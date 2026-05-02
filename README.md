@@ -227,7 +227,7 @@ Bubble/
 | ---------------- | --------------------------------------------------------------- | ----------- |
 | Admin            | [admin@bubble.com](mailto:admin@bubble.com)                     | admin123    |
 | User             | [user@bubble.com](mailto:user@bubble.com)                       | user123     |
-| Customer Service | [customerservice@bubble.com](mailto:customerservice@bubble.com) | customer123 |
+| Customer Service | [support@bubble.com](mailto:support@bubble.com)                 | support123 |
 
 ---
 
