@@ -1,35 +1,46 @@
+// backend/routes/adminProducts.js
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
-
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
-const cloudinary = require("cloudinary").v2;
+const path = require("path");
+const fs = require("fs");
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "bubble-products",
-    allowed_formats: ["jpg", "png", "jpeg"],
+// Configure multer for file upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
 
-const upload = multer({ storage });
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed"));
+  }
+};
+
+const upload = multer({ storage, fileFilter });
 
 function normalizeArray(value) {
   if (!value) return [];
   if (Array.isArray(value)) return value;
-
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  return value.split(",").map(item => item.trim()).filter(Boolean);
 }
 
 // GET all products for admin
@@ -38,60 +49,45 @@ router.get("/", async (req, res) => {
     const products = await Product.find().sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to get products",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Failed to get products", error: error.message });
   }
 });
 
 // ADD product
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const {
-      name,
-      price,
-      description,
-      stock,
-      scent,
-      skinType,
-      ingredients,
-      isCustomizable,
-      theme,
-    } = req.body;
+    const { name, price, description, stock, scent, skinType, ingredients, isCustomizable, theme } = req.body;
 
     if (!name || price === undefined || !description || stock === undefined) {
-      return res.status(400).json({
-        message: "Name, price, description, and stock are required",
-      });
+      return res.status(400).json({ message: "Name, price, description, and stock are required" });
     }
 
     if (Number(price) < 0 || Number(stock) < 0) {
-      return res.status(400).json({
-        message: "Price and stock must be positive numbers",
-      });
+      return res.status(400).json({ message: "Price and stock must be positive numbers" });
     }
+
+    const imageUrl = req.file
+      ? `http://localhost:5000/uploads/${req.file.filename}`
+      : req.body.image || "";
 
     const product = new Product({
       name,
       price: Number(price),
       description,
       stock: Number(stock),
-      image: req.file ? req.file.path : req.body.image || "",
+      image: imageUrl,
       scent: scent || "",
       skinType: normalizeArray(skinType),
       ingredients: normalizeArray(ingredients),
       isCustomizable: isCustomizable === "true" || isCustomizable === true,
-      theme: theme || "pink",
+      theme: theme || "purple",
     });
 
     const savedProduct = await product.save();
     res.status(201).json(savedProduct);
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to add product",
-      error: error.message,
-    });
+    console.error(error);
+    res.status(500).json({ message: "Failed to add product", error: error.message });
   }
 });
 
@@ -102,21 +98,15 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 
     if (updatedData.price !== undefined) {
       updatedData.price = Number(updatedData.price);
-
       if (updatedData.price < 0) {
-        return res.status(400).json({
-          message: "Price cannot be negative",
-        });
+        return res.status(400).json({ message: "Price cannot be negative" });
       }
     }
 
     if (updatedData.stock !== undefined) {
       updatedData.stock = Number(updatedData.stock);
-
       if (updatedData.stock < 0) {
-        return res.status(400).json({
-          message: "Stock cannot be negative",
-        });
+        return res.status(400).json({ message: "Stock cannot be negative" });
       }
     }
 
@@ -128,14 +118,8 @@ router.put("/:id", upload.single("image"), async (req, res) => {
       updatedData.skinType = normalizeArray(updatedData.skinType);
     }
 
-    if (updatedData.isCustomizable !== undefined) {
-      updatedData.isCustomizable =
-        updatedData.isCustomizable === "true" ||
-        updatedData.isCustomizable === true;
-    }
-
     if (req.file) {
-      updatedData.image = req.file.path;
+      updatedData.image = `http://localhost:5000/uploads/${req.file.filename}`;
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -145,17 +129,12 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     );
 
     if (!updatedProduct) {
-      return res.status(404).json({
-        message: "Product not found",
-      });
+      return res.status(404).json({ message: "Product not found" });
     }
 
     res.status(200).json(updatedProduct);
   } catch (error) {
-    res.status(400).json({
-      message: "Failed to update product",
-      error: error.message,
-    });
+    res.status(400).json({ message: "Failed to update product", error: error.message });
   }
 });
 
@@ -163,21 +142,12 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-
     if (!deletedProduct) {
-      return res.status(404).json({
-        message: "Product not found",
-      });
+      return res.status(404).json({ message: "Product not found" });
     }
-
-    res.status(200).json({
-      message: "Product deleted successfully",
-    });
+    res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
-    res.status(400).json({
-      message: "Failed to delete product",
-      error: error.message,
-    });
+    res.status(400).json({ message: "Failed to delete product", error: error.message });
   }
 });
 

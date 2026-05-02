@@ -5,25 +5,43 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { authenticateToken } = require("../middleware/auth");
-const upload = require("../middleware/upload");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key_change_this";
+const JWT_SECRET = process.env.JWT_SECRET || "bubble_secret_key_123";
+
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer for profile images
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "profile-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
 
 // Sign Up
 router.post("/signup", async (req, res) => {
   try {
     const { fullName, email, password, phone, address } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = new User({
       fullName,
       email,
@@ -35,7 +53,6 @@ router.post("/signup", async (req, res) => {
 
     await user.save();
 
-    // Generate token
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role, fullName: user.fullName },
       JWT_SECRET,
@@ -52,12 +69,11 @@ router.post("/signup", async (req, res) => {
         role: user.role,
         phone: user.phone,
         address: user.address,
-        profileImage: user.profileImage,
       },
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
@@ -92,12 +108,11 @@ router.post("/signin", async (req, res) => {
         role: user.role,
         phone: user.phone,
         address: user.address,
-        profileImage: user.profileImage,
       },
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
@@ -145,7 +160,7 @@ router.post("/profile/image", authenticateToken, upload.single("image"), async (
       return res.status(400).json({ message: "No image uploaded" });
     }
 
-    const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
     
     const user = await User.findByIdAndUpdate(
       req.user.userId,
@@ -185,24 +200,14 @@ router.put("/change-password", authenticateToken, async (req, res) => {
   }
 });
 
-// Get All Users (Admin only)
-router.get("/users", authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-    
-    const users = await User.find().select("-password");
-    res.json(users);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
 // Verify Token
 router.get("/verify", authenticateToken, async (req, res) => {
   res.json({ valid: true, user: req.user });
+});
+
+// Logout (just for client-side cleanup)
+router.post("/logout", (req, res) => {
+  res.json({ message: "Logged out successfully" });
 });
 
 module.exports = router;
