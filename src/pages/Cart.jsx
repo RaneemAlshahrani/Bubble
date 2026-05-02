@@ -10,6 +10,45 @@ function Cart() {
   const navigate = useNavigate();
   const isMobile = window.innerWidth <= 768;
 
+  const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse",
+  minWidth: isMobile ? "360px" : "620px",
+  background: "rgba(255,255,255,0.22)",
+  borderRadius: "14px",
+  overflow: "hidden",
+};
+
+const tdStyle = {
+  padding: isMobile ? "6px 4px" : "14px 12px",
+  textAlign: "center",
+  color: "#444",
+  borderTop: "1px solid rgba(0,0,0,0.06)",
+  fontSize: isMobile ? "11px" : "14px",  verticalAlign: "middle",
+  wordBreak: "break-word",
+};
+
+const productCell = {
+  display: "flex",
+  flexDirection: isMobile ? "column" : "row",
+  alignItems: "center", // 👈 always center
+  justifyContent: "center", // 👈 center horizontally
+  gap: "10px",
+  textAlign: "center", // 👈 center text under image (mobile)
+};
+
+const productImageStyle = {
+  width: isMobile ? "60px" : "74px",
+  height: isMobile ? "60px" : "74px",
+  objectFit: "contain",
+};
+
+const qtyBox = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: isMobile ? "4px" : "6px",
+};
+
   // Get actual logged-in user
   const userId = getCurrentUserId();
   const isLoggedIn = !!userId;
@@ -401,14 +440,15 @@ function Cart() {
         style={{
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
-          gap: "18px",
+          gap: isMobile ? "14px" : "18px",
           position: "relative",
           zIndex: 2,
         }}
       >
         <div
           style={{
-            width: isMobile ? "100%" : "220px",
+            width: "100%",
+            maxWidth: isMobile ? "100%" : "220px",
             minWidth: isMobile ? "100%" : "220px",
             background: "rgba(255,255,255,0.12)",
             border: "1px solid rgba(255,255,255,0.25)",
@@ -752,17 +792,11 @@ const summaryRow = {
 
 const tableWrapper = {
   overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
   borderRadius: "14px",
 };
 
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse",
-  minWidth: "620px",
-  background: "rgba(255,255,255,0.22)",
-  borderRadius: "14px",
-  overflow: "hidden",
-};
+
 
 const tableHeadRow = {
   background: "rgba(255,255,255,0.45)",
@@ -776,32 +810,6 @@ const thStyle = {
   fontSize: "15px",
 };
 
-const tdStyle = {
-  padding: "14px 12px",
-  textAlign: "center",
-  color: "#444",
-  borderTop: "1px solid rgba(0,0,0,0.06)",
-  fontSize: "14px",
-  verticalAlign: "middle",
-};
-
-const productCell = {
-  display: "flex",
-  alignItems: "center",
-  gap: "14px",
-};
-
-const productImageStyle = {
-  width: "74px",
-  height: "74px",
-  objectFit: "contain",
-};
-
-const qtyBox = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "6px",
-};
 
 const qtyBtn = {
   width: "24px",
