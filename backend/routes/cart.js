@@ -1,11 +1,49 @@
 const express = require("express");
 const router = express.Router();
 const Cart = require("../models/Cart");
+const CustomOption = require("../models/CustomOption");
 
 // Add to cart
 router.post("/", async (req, res) => {
   try {
     const { userId, productId, quantity, customOptions } = req.body;
+    const qty = quantity || 1;
+
+    // If customized soap, check and decrease selected option stocks
+    if (customOptions) {
+      const selectedNames = [
+        ...(customOptions.scents || []),
+        customOptions.texture,
+        ...(customOptions.ingredients || []),
+      ].filter(Boolean);
+
+      const selectedOptions = await CustomOption.find({
+        name: { $in: selectedNames },
+      });
+
+      for (const name of selectedNames) {
+        const option = selectedOptions.find((item) => item.name === name);
+
+        if (!option || !option.available || option.stock < qty) {
+          return res.status(400).json({
+            message: `${name} is out of stock or unavailable`,
+          });
+        }
+      }
+
+      await Promise.all(
+        selectedOptions.map(async (option) => {
+          option.stock -= qty;
+
+          if (option.stock <= 0) {
+            option.stock = 0;
+            option.available = false;
+          }
+
+          await option.save();
+        })
+      );
+    }
 
     let existingItem = null;
 
@@ -14,7 +52,7 @@ router.post("/", async (req, res) => {
     }
 
     if (existingItem) {
-      existingItem.quantity += quantity || 1;
+      existingItem.quantity += qty;
       await existingItem.save();
       return res.status(200).json(existingItem);
     }
@@ -22,9 +60,10 @@ router.post("/", async (req, res) => {
     const cartItem = new Cart({
       userId,
       productId,
-      quantity: quantity || 1,
-      customOptions
+      quantity: qty,
+      customOptions,
     });
+
     await cartItem.save();
 
     res.status(201).json(cartItem);
@@ -36,7 +75,9 @@ router.post("/", async (req, res) => {
 // Get user cart
 router.get("/:userId", async (req, res) => {
   try {
-    const cartItems = await Cart.find({ userId: req.params.userId }).populate("productId");
+    const cartItems = await Cart.find({ userId: req.params.userId }).populate(
+      "productId"
+    );
     res.status(200).json(cartItems);
   } catch (error) {
     res.status(500).json({ message: "Failed to get cart" });

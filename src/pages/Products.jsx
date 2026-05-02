@@ -20,7 +20,7 @@ function Products() {
         const customSoap = {
           _id: "custom-soap",
           name: "Custom Soap",
-          price: null,
+          price: 7,
           image: null,
           scent: "Custom",
           skinType: ["Sensitive"],
@@ -77,31 +77,31 @@ function Products() {
           <div style={{ marginBottom: "24px" }}>
             <h3 style={{ fontSize: "16px", marginBottom: "12px", color: themeData.textColor }}>Price Range</h3>
             <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
-              <input 
-                type="number" 
-                value={minPrice} 
-                onChange={(e) => setMinPrice(e.target.value)} 
-                placeholder="Min" 
-                style={{ 
-                  width: "50%", 
-                  padding: "10px", 
-                  borderRadius: "10px", 
+              <input
+                type="number"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                placeholder="Min"
+                style={{
+                  width: "50%",
+                  padding: "10px",
+                  borderRadius: "10px",
                   border: "1px solid #ddd",
                   background: "rgba(255,255,255,0.9)",
-                }} 
+                }}
               />
-              <input 
-                type="number" 
-                value={maxPrice} 
-                onChange={(e) => setMaxPrice(e.target.value)} 
-                placeholder="Max" 
-                style={{ 
-                  width: "50%", 
-                  padding: "10px", 
-                  borderRadius: "10px", 
+              <input
+                type="number"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                placeholder="Max"
+                style={{
+                  width: "50%",
+                  padding: "10px",
+                  borderRadius: "10px",
                   border: "1px solid #ddd",
                   background: "rgba(255,255,255,0.9)",
-                }} 
+                }}
               />
             </div>
             <Button text="Apply Filters" variant="purple" style={{ width: "100%" }} onClick={applyFilters} />
@@ -112,9 +112,9 @@ function Products() {
             <h3 style={{ fontSize: "16px", marginBottom: "12px", color: themeData.textColor }}>Scent</h3>
             {["Lavender", "Rose", "Coconut", "Honey", "Unscented", "Sakura"].map((scent) => (
               <label key={scent} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", cursor: "pointer" }}>
-                <input 
-                  type="checkbox" 
-                  checked={selectedScents.includes(scent)} 
+                <input
+                  type="checkbox"
+                  checked={selectedScents.includes(scent)}
                   onChange={() => handleCheckboxChange(scent, selectedScents, setSelectedScents)}
                 />
                 <span style={{ color: themeData.textLight }}>{scent}</span>
@@ -127,9 +127,9 @@ function Products() {
             <h3 style={{ fontSize: "16px", marginBottom: "12px", color: themeData.textColor }}>Skin Type</h3>
             {["Normal", "Dry", "Oily", "Sensitive"].map((type) => (
               <label key={type} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", cursor: "pointer" }}>
-                <input 
-                  type="checkbox" 
-                  checked={selectedSkinTypes.includes(type)} 
+                <input
+                  type="checkbox"
+                  checked={selectedSkinTypes.includes(type)}
                   onChange={() => handleCheckboxChange(type, selectedSkinTypes, setSelectedSkinTypes)}
                 />
                 <span style={{ color: themeData.textLight }}>{type}</span>
@@ -150,20 +150,19 @@ function Products() {
           <h1 style={{ marginTop: 0, marginBottom: "24px", fontSize: "28px", color: themeData.textColor }}>All Products</h1>
 
           {filteredProducts.length > 0 ? (
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", 
-              gap: "24px" 
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+              gap: "24px"
             }}>
-              {filteredProducts.map((product) => {
-                if (product.customizable) return null;
-                return <Card key={product._id} product={product} />;
-              })}
+              {filteredProducts.map((product) => (
+                <Card key={product._id} product={product} />
+              ))}
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <p style={{ color: themeData.textLight, fontSize: "18px" }}>No products match your filters</p>
-              <button 
+              <button
                 onClick={() => {
                   setSelectedScents([]);
                   setSelectedSkinTypes([]);
