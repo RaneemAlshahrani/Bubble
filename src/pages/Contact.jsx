@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import { getCurrentUser, getAuthToken } from "../services/api";
+import { getCurrentUser, getAuthToken, getCurrentUserId } from "../utils/auth";
 
 function Contact() {
   const [form, setForm] = useState({
@@ -19,9 +19,12 @@ function Contact() {
   const [showAll, setShowAll] = useState(false);
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userOrders, setUserOrders] = useState([]);
+  const [fetchingOrders, setFetchingOrders] = useState(false);
 
   const isLoggedIn = true;
   const isMobile = window.innerWidth <= 768;
+  const userId = getCurrentUserId();
 
   // Load profile data from backend
   useEffect(() => {
@@ -75,6 +78,64 @@ function Contact() {
       .catch(err => console.log(err));
   }, []);
 
+  // Load user's orders from localStorage (where orders are actually stored)
+  useEffect(() => {
+    const loadUserOrders = () => {
+      setFetchingOrders(true);
+      try {
+        // Get orders from localStorage
+        const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
+        
+        // Get current user info
+        const currentUser = getCurrentUser();
+        const currentEmail = form.email || currentUser?.email;
+        
+        // Filter orders for current user
+        let filteredOrders = [];
+        
+        if (currentEmail) {
+          // Filter by customer email
+          filteredOrders = storedOrders.filter(
+            order => order.customer?.email === currentEmail
+          );
+        }
+        
+        // Also try to filter by userId if available
+        if (filteredOrders.length === 0 && userId) {
+          filteredOrders = storedOrders.filter(
+            order => order.userId === userId
+          );
+        }
+        
+        // If still no orders, show all orders (for testing)
+        if (filteredOrders.length === 0) {
+          filteredOrders = storedOrders;
+        }
+        
+        // Sort orders by date (newest first)
+        filteredOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        setUserOrders(filteredOrders);
+      } catch (error) {
+        console.error("Error loading orders:", error);
+        setUserOrders([]);
+      } finally {
+        setFetchingOrders(false);
+      }
+    };
+
+    // Load orders when email is available
+    if (form.email) {
+      loadUserOrders();
+    } else {
+      // Try to load with current user
+      const currentUser = getCurrentUser();
+      if (currentUser?.email) {
+        setForm(prev => ({ ...prev, email: currentUser.email }));
+      }
+    }
+  }, [form.email, userId]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -118,10 +179,6 @@ function Contact() {
       newErrors.phone = "Phone must contain only numbers";
     }
 
-    if (form.orderId && !/^\d+$/.test(form.orderId)) {
-      newErrors.orderId = "Order ID must be numbers only";
-    }
-
     if (!form.subject.trim()) {
       newErrors.subject = "Subject cannot be empty";
     }
@@ -157,24 +214,45 @@ function Contact() {
       orderItems: [],
     };
 
-    await fetch("http://localhost:5000/api/tickets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newTicket),
-    });
+    try {
+      const token = getAuthToken();
+      await fetch("http://localhost:5000/api/tickets", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
+        body: JSON.stringify(newTicket),
+      });
 
-    setSuccessMessage("Support ticket submitted successfully");
+      setSuccessMessage("Support ticket submitted successfully");
 
-    // Clear only ticket-specific fields, keep profile info
-    setForm((prev) => ({
-      ...prev,
-      orderId: "",
-      subject: "",
-      message: "",
-    }));
+      // Clear only ticket-specific fields, keep profile info
+      setForm((prev) => ({
+        ...prev,
+        orderId: "",
+        subject: "",
+        message: "",
+      }));
+
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (error) {
+      console.error("Error submitting ticket:", error);
+      setSuccessMessage("Failed to submit ticket. Please try again.");
+    }
   };
 
   const visibleFaqs = showAll ? faqs : faqs.slice(0, 5);
+
+  // Helper function to format order ID
+  const formatOrderId = (order) => {
+    // Return the actual order ID from storage
+    if (order.id) return order.id;
+    if (order._id) return `#${order._id.slice(-8)}`;
+    if (order.orderId) return order.orderId;
+    return "N/A";
+  };
 
   if (loading) {
     return (
@@ -324,14 +402,79 @@ function Contact() {
               error={errors.fullName} 
             />
 
-            {/* Order Number - User enters */}
-            <Input 
-              label="Order Number" 
-              name="orderId" 
-              value={form.orderId} 
-              onChange={handleChange} 
-              error={errors.orderId} 
-            />
+            {/* Order Number - Dropdown with user's orders */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", color: "#444" }}>
+                Order Number
+              </label>
+              
+              {fetchingOrders ? (
+                <div style={{
+                  padding: "12px 14px",
+                  borderRadius: "10px",
+                  border: "1px solid #e0e0e0",
+                  backgroundColor: "#f5f5f5",
+                  fontSize: "14px",
+                  color: "#999",
+                }}>
+                  Loading your orders...
+                </div>
+              ) : userOrders.length > 0 ? (
+                <select
+                  name="orderId"
+                  value={form.orderId}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #b9b9b9",
+                    outline: "none",
+                    fontSize: "14px",
+                    fontFamily: "Josefin Sans, sans-serif",
+                    boxSizing: "border-box",
+                    background: "white",
+                    cursor: "pointer"
+                  }}
+                >
+                  <option value="">-- Select an order (optional) --</option>
+                  {userOrders.map((order, index) => (
+                    <option key={order.id || order._id || index} value={order.id || order._id || `order-${index}`}>
+                      {formatOrderId(order)} - ${(order.total || order.subtotal || 0).toFixed(2)} - {order.status || "Pending"} - {new Date(order.date).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    name="orderId"
+                    placeholder="No orders found. Type manually (optional)"
+                    value={form.orderId}
+                    onChange={handleChange}
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px",
+                      borderRadius: "10px",
+                      border: "1px solid #b9b9b9",
+                      outline: "none",
+                      fontSize: "14px",
+                      fontFamily: "Josefin Sans, sans-serif",
+                      boxSizing: "border-box",
+                      background: "white",
+                    }}
+                  />
+                </>
+              )}
+              {errors.orderId && (
+                <p style={{ color: "#ff5a45", fontSize: "12px", marginTop: "6px" }}>{errors.orderId}</p>
+              )}
+              <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+                {userOrders.length > 0 
+                  ? `Select an order from your history (${userOrders.length} orders found)` 
+                  : "No orders in your history. You can type your order number manually."}
+              </small>
+            </div>
 
             {/* Email - Read Only (NOT Editable) */}
             <div style={{ marginBottom: "20px" }}>
