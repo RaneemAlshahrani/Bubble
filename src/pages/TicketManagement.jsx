@@ -58,13 +58,21 @@ function TicketManagement() {
     return matchesStatus && matchesSearch;
   });
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+useEffect(() => {
+  const handleResize = () => setIsMobile(window.innerWidth < 768);
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
+
   if (loading) return <div style={{ textAlign: "center", padding: "50px" }}>Loading tickets...</div>;
 
   return (
     <div style={{
       background: themeData.cardBg,
       borderRadius: "28px",
-      padding: "24px",
+      padding: isMobile ? "12px" : "24px",
     }}>
       <h1 style={{ margin: "0 0 24px", color: themeData.textColor }}>🎫 Ticket Management</h1>
 
@@ -112,8 +120,9 @@ function TicketManagement() {
             }}
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "center",
+              gap: "8px",
               padding: "16px",
               background: selectedTicket?._id === ticket._id ? themeData.primary : "rgba(255,255,255,0.08)",
               borderRadius: "16px",
@@ -122,7 +131,7 @@ function TicketManagement() {
             }}
           >
             <div>
-              <div style={{ fontWeight: "bold", color: selectedTicket?._id === ticket._id ? "white" : themeData.textColor }}>
+              <div style={{ fontWeight: "bold", wordBreak: "break-word", color: selectedTicket?._id === ticket._id ? "white" : themeData.textColor }}>
                 #{ticket._id?.slice(-8)} - {ticket.customer || "Guest"}
               </div>
               <div style={{ fontSize: "13px", color: selectedTicket?._id === ticket._id ? "rgba(255,255,255,0.8)" : themeData.textLight }}>
@@ -158,7 +167,7 @@ function TicketManagement() {
             Ticket #{selectedTicket._id?.slice(-8)} Details
           </h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))", gap: "16px", marginBottom: "20px" }}>
             <div><strong>Customer:</strong> {selectedTicket.customer || "N/A"}</div>
             <div><strong>Email:</strong> {selectedTicket.email || "N/A"}</div>
             <div><strong>Phone:</strong> {selectedTicket.phone || "N/A"}</div>
@@ -167,7 +176,7 @@ function TicketManagement() {
             <div><strong>Message:</strong> {selectedTicket.message || "N/A"}</div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             <select value={issueType} onChange={(e) => setIssueType(e.target.value)} style={{ padding: "10px", borderRadius: "8px" }}>
               <option>Refund</option>
               <option>Wrong Order</option>
