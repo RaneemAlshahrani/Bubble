@@ -6,21 +6,13 @@ import { signup, saveUser, setAuthToken } from "../services/api";
 const SignIn = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    phone: "",
-    address: "",
+    fullName: "", email: "", password: "", confirmPassword: "", phone: "", address: ""
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
   };
 
@@ -56,7 +48,6 @@ const SignIn = () => {
     try {
       const { confirmPassword, ...userData } = formData;
       const data = await signup(userData);
-      
       setAuthToken(data.token);
       saveUser(data.user);
       
@@ -76,11 +67,8 @@ const SignIn = () => {
 
   return (
     <div className="auth-container">
-      <div className="bubble-1"></div>
-      <div className="bubble-2"></div>
-      
       <div className="auth-card">
-        <h2>Create Account </h2>
+        <h2>Create Account ✨</h2>
         <p>Join us to start shopping!</p>
         
         {error && <div className="auth-error">{error}</div>}
@@ -88,79 +76,32 @@ const SignIn = () => {
         <form onSubmit={handleSubmit}>
           <div className="auth-form-group">
             <label htmlFor="fullName">Full Name *</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-              placeholder="Enter your full name"
-            />
+            <input type="text" id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} required placeholder="Enter your full name" />
           </div>
           
           <div className="auth-form-group">
             <label htmlFor="email">Email Address *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="Enter your email"
-            />
-            <small>✓ Dots (.) are allowed (e.g., john.doe@example.com)</small>
+            <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Enter your email" />
           </div>
           
           <div className="auth-form-group">
             <label htmlFor="password">Password *</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Create a password (min 6 characters)"
-            />
+            <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Create a password (min 6 characters)" />
           </div>
           
           <div className="auth-form-group">
             <label htmlFor="confirmPassword">Confirm Password *</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              placeholder="Confirm your password"
-            />
+            <input type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Confirm your password" />
           </div>
           
           <div className="auth-form-group">
             <label htmlFor="phone">Phone Number</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter your phone number"
-            />
+            <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="Enter your phone number" />
           </div>
           
           <div className="auth-form-group">
             <label htmlFor="address">Address</label>
-            <textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Enter your address"
-              rows="3"
-            />
+            <textarea id="address" name="address" value={formData.address} onChange={handleChange} placeholder="Enter your address" rows="3" />
           </div>
           
           <button type="submit" className="auth-button" disabled={loading}>

@@ -5,18 +5,12 @@ import { signin, saveUser, setAuthToken } from "../services/api";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
   };
 
@@ -27,7 +21,6 @@ const Login = () => {
 
     try {
       const data = await signin(formData.email, formData.password);
-      
       setAuthToken(data.token);
       saveUser(data.user);
       
@@ -47,11 +40,8 @@ const Login = () => {
 
   return (
     <div className="auth-container">
-      <div className="bubble-1"></div>
-      <div className="bubble-2"></div>
-      
       <div className="auth-card">
-        <h2>Welcome Back!</h2>
+        <h2>Welcome Back! 👋</h2>
         <p>Please login to your account</p>
         
         {error && <div className="auth-error">{error}</div>}

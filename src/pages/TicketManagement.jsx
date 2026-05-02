@@ -1,391 +1,204 @@
+// frontend/src/pages/TicketManagement.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import rose from "../assets/rose.png";
-import rosemary from "../assets/rosemary.png";
-import logo from "../assets/bubble-logo.png";
-import "../styles/ticketManagement.css";
+import { useTheme } from "../context/ThemeContext";
 import { getAuthToken } from "../utils/auth";
 
 function TicketManagement() {
- const navigate = useNavigate();
+  const { themeData } = useTheme();
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [search, setSearch] = useState("");
+  const [issueType, setIssueType] = useState("");
+  const [refundEligibility, setRefundEligibility] = useState("");
+  const [status, setStatus] = useState("");
+  const [message, setMessage] = useState("");
 
- // MongoDB
- const [tickets, setTickets] = useState([]);
- const [users, setUsers] = useState({}); // Cache for user profiles
- const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    loadTickets();
+  }, []);
 
- const loadTickets = async () => {
-  try {
+  const loadTickets = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch("http://localhost:5000/api/tickets", {
+        headers: { "Authorization": token ? `Bearer ${token}` : "" }
+      });
+      const data = await response.json();
+      setTickets(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedTicket) return;
     const token = getAuthToken();
-    const response = await fetch("http://localhost:5000/api/tickets", {
+    await fetch(`http://localhost:5000/api/tickets/${selectedTicket._id}`, {
+      method: "PUT",
       headers: {
-        "Authorization": token ? `Bearer ${token}` : "",
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${token}` : ""
+      },
+      body: JSON.stringify({ issueType, refundEligibility, status }),
     });
-    const data = await response.json();
-    setTickets(data);
-  } catch (error) {
-    console.error("Error loading tickets:", error);
-  } finally {
-    setLoading(false);
-  }
- };
+    setMessage("✅ Ticket updated!");
+    setTimeout(() => setMessage(""), 3000);
+    loadTickets();
+  };
 
- useEffect(() => {
-  loadTickets();
- }, []);
+  const filteredTickets = tickets.filter(ticket => {
+    const matchesStatus = filterStatus === "All" || ticket.status === filterStatus;
+    const matchesSearch = ticket._id?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.customer?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.email?.toLowerCase().includes(search.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
- const [filterStatus, setFilterStatus] = useState("All");
- const [ticketSearch, setTicketSearch] = useState("");
- const [selectedTicketId, setSelectedTicketId] = useState(null);
+  if (loading) return <div style={{ textAlign: "center", padding: "50px" }}>Loading tickets...</div>;
 
- const selectedTicket =
-   tickets.find((ticket) => ticket._id === selectedTicketId) || tickets[0] || {};
+  return (
+    <div style={{
+      background: themeData.cardBg,
+      borderRadius: "28px",
+      padding: "24px",
+    }}>
+      <h1 style={{ margin: "0 0 24px", color: themeData.textColor }}>🎫 Ticket Management</h1>
 
- const [issueType, setIssueType] = useState("");
- const [refundEligibility, setRefundEligibility] = useState("");
- const [status, setStatus] = useState("");
- const [note, setNote] = useState("");
- const [savedMessage, setSavedMessage] = useState("");
+      {/* Filters */}
+      <div style={{
+        display: "flex",
+        gap: "12px",
+        flexWrap: "wrap",
+        marginBottom: "24px",
+      }}>
+        <input
+          type="text"
+          placeholder="Search by ID, customer, or email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            flex: 1,
+            padding: "10px",
+            borderRadius: "10px",
+            border: "1px solid #ccc",
+          }}
+        />
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #ccc" }}
+        >
+          <option value="All">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Open">Open</option>
+          <option value="Processed">Processed</option>
+        </select>
+      </div>
 
- useEffect(() => {
-  if (selectedTicket._id) {
-    setIssueType(selectedTicket.issueType || "");
-    setRefundEligibility(selectedTicket.refundEligibility || "");
-    setStatus(selectedTicket.status || "Pending");
-  }
- }, [selectedTicket]);
+      {/* Tickets List */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
+        {filteredTickets.map(ticket => (
+          <div
+            key={ticket._id}
+            onClick={() => {
+              setSelectedTicket(ticket);
+              setIssueType(ticket.issueType || "");
+              setRefundEligibility(ticket.refundEligibility || "");
+              setStatus(ticket.status || "Pending");
+            }}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "16px",
+              background: selectedTicket?._id === ticket._id ? themeData.primary : "rgba(255,255,255,0.08)",
+              borderRadius: "16px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: "bold", color: selectedTicket?._id === ticket._id ? "white" : themeData.textColor }}>
+                #{ticket._id?.slice(-8)} - {ticket.customer || "Guest"}
+              </div>
+              <div style={{ fontSize: "13px", color: selectedTicket?._id === ticket._id ? "rgba(255,255,255,0.8)" : themeData.textLight }}>
+                {ticket.subject || "No subject"}
+              </div>
+            </div>
+            <div>
+              <span style={{
+                display: "inline-block",
+                padding: "4px 12px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: "600",
+                background: ticket.status === "Processed" ? "#d7f2d4" : ticket.status === "Open" ? "#d8e7ff" : "#ffd7c9",
+                color: ticket.status === "Processed" ? "#3d9b44" : ticket.status === "Open" ? "#3d6fd1" : "#d96a3a",
+              }}>
+                {ticket.status || "Pending"}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
 
- // Filter tickets
- const filteredTickets = tickets.filter((ticket) => {
-   const matchesStatus =
-     filterStatus === "All" || ticket.status === filterStatus;
+      {/* Ticket Details */}
+      {selectedTicket && (
+        <div style={{
+          background: "rgba(255,255,255,0.08)",
+          borderRadius: "20px",
+          padding: "20px",
+          marginTop: "20px",
+        }}>
+          <h2 style={{ margin: "0 0 16px", fontSize: "20px", color: themeData.textColor }}>
+            Ticket #{selectedTicket._id?.slice(-8)} Details
+          </h2>
 
-   const matchesSearch = ticket._id
-     ?.toLowerCase()
-     .includes(ticketSearch.toLowerCase()) ||
-     ticket.customer?.toLowerCase().includes(ticketSearch.toLowerCase()) ||
-     ticket.email?.toLowerCase().includes(ticketSearch.toLowerCase());
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+            <div><strong>Customer:</strong> {selectedTicket.customer || "N/A"}</div>
+            <div><strong>Email:</strong> {selectedTicket.email || "N/A"}</div>
+            <div><strong>Phone:</strong> {selectedTicket.phone || "N/A"}</div>
+            <div><strong>Order:</strong> {selectedTicket.orderNumber || "N/A"}</div>
+            <div><strong>Subject:</strong> {selectedTicket.subject || "N/A"}</div>
+            <div><strong>Message:</strong> {selectedTicket.message || "N/A"}</div>
+          </div>
 
-   return matchesStatus && matchesSearch;
- });
-
- const handleSelectTicket = (ticket) => {
-   setSelectedTicketId(ticket._id);
-   setNote("");
-   setSavedMessage("");
- };
-
- // Update ticket
- const handleUpdate = async () => {
-   if (!selectedTicket?._id) return;
-
-   try {
-     const token = getAuthToken();
-     await fetch(`http://localhost:5000/api/tickets/${selectedTicket._id}`, {
-       method: "PUT",
-       headers: { 
-         "Content-Type": "application/json",
-         "Authorization": token ? `Bearer ${token}` : ""
-       },
-       body: JSON.stringify({
-         issueType,
-         refundEligibility,
-         status,
-       }),
-     });
-
-     await loadTickets();
-     setSavedMessage("Saved!");
-     setTimeout(() => setSavedMessage(""), 3000);
-   } catch (error) {
-     console.error("Error updating ticket:", error);
-     setSavedMessage("Error saving!");
-   }
- };
-
- const getStatusColor = (status) => {
-   switch (status?.toLowerCase()) {
-     case 'pending': return '#ffd7c9';
-     case 'open': return '#d8e7ff';
-     case 'processed': return '#d7f2d4';
-     default: return '#e0e0e0';
-   }
- };
-
- const getStatusTextColor = (status) => {
-   switch (status?.toLowerCase()) {
-     case 'pending': return '#d96a3a';
-     case 'open': return '#3d6fd1';
-     case 'processed': return '#3d9b44';
-     default: return '#666';
-   }
- };
-
- if (loading) {
-   return (
-     <div className="purple-page ticket-page">
-       <div className="ticket-layout">
-         <div className="cs-sidebar">
-           <div className="cs-logo-card">
-             <img src={logo} alt="Bubble Logo" />
-           </div>
-           <button className="active">Ticket Management</button>
-           <button onClick={() => navigate("/customer-service/faqs")}>FAQ Templates</button>
-           <div className="cs-spacer" />
-           <button onClick={() => navigate("/")}>Log out</button>
-         </div>
-         <div style={{ textAlign: "center", padding: "50px" }}>Loading tickets...</div>
-       </div>
-     </div>
-   );
- }
-
- return (
-   <div className="purple-page ticket-page">
-     <div className="ticket-layout">
-
-       {/* Sidebar */}
-       <div className="cs-sidebar">
-         <div className="cs-logo-card">
-           <img src={logo} alt="Bubble Logo" />
-         </div>
-
-         <button className="active">Ticket Management</button>
-
-         <button onClick={() => navigate("/customer-service/faqs")}>
-           FAQ Templates
-         </button>
-
-         <div className="cs-spacer" />
-
-         <button onClick={() => navigate("/")}>Log out</button>
-       </div>
-
-       {/* Main */}
-       <div className="ticket-main">
-
-         {/* Top panel */}
-         <div className="ticket-top-panel">
-           <div className="ticket-filter-row">
-             <input
-               type="text"
-               placeholder="Search by Ticket ID, Customer, or Email"
-               value={ticketSearch}
-               onChange={(e) => setTicketSearch(e.target.value)}
-             />
-
-             <select
-               value={filterStatus}
-               onChange={(e) => setFilterStatus(e.target.value)}
-             >
-               <option value="All">Filter By: All</option>
-               <option value="Pending">Filter By: Pending</option>
-               <option value="Open">Filter By: Open</option>
-               <option value="Processed">Filter By: Processed</option>
-             </select>
-           </div>
-
-           <table className="ticket-table">
-             <thead>
-               <tr>
-                 <th>Ticket ID</th>
-                 <th>Order ID</th>
-                 <th>Customer</th>
-                 <th>Email</th>
-                 <th>Status</th>
-                 <th>Date</th>
-               </tr>
-             </thead>
-
-             <tbody>
-               {filteredTickets.length > 0 ? (
-                 filteredTickets.map((ticket) => (
-                   <tr
-                     key={ticket._id}
-                     className={selectedTicketId === ticket._id ? "selected" : ""}
-                     onClick={() => handleSelectTicket(ticket)}
-                     style={{ cursor: "pointer" }}
-                   >
-                     <td style={{ fontSize: "12px" }}>{ticket._id?.slice(-8)}</td>
-                     <td>{ticket.orderNumber || "N/A"}</td>
-                     <td><strong>{ticket.customer || "Guest"}</strong></td>
-                     <td style={{ fontSize: "12px" }}>{ticket.email || "No email"}</td>
-                     <td>
-                       <span 
-                         className="ticket-status"
-                         style={{
-                           backgroundColor: getStatusColor(ticket.status),
-                           color: getStatusTextColor(ticket.status),
-                           padding: "4px 10px",
-                           borderRadius: "12px",
-                           fontSize: "12px",
-                           fontWeight: "600"
-                         }}
-                       >
-                         {ticket.status || "Pending"}
-                       </span>
-                     </td>
-                     <td>{ticket.date || new Date(ticket.createdAt).toLocaleDateString()}</td>
-                   </tr>
-                 ))
-               ) : (
-                 <tr>
-                   <td colSpan="6" style={{ textAlign: "center", padding: "40px" }}>
-                     No tickets found.
-                   </td>
-                 </tr>
-               )}
-             </tbody>
-           </table>
-         </div>
-
-         {/* Details */}
-         <div className="ticket-details-panel">
-           <div className="ticket-info-card">
-             <h2>Ticket #{selectedTicket?._id?.slice(-8)}</h2>
-
-             <div className="ticket-info-table">
-               <div className="ticket-info-item">
-                 <div className="ticket-info-head">Full Name</div>
-                 <div className="ticket-info-value">{selectedTicket.customer || "N/A"}</div>
-               </div>
-
-               <div className="ticket-info-item">
-                 <div className="ticket-info-head">Email</div>
-                 <div className="ticket-info-value" style={{ wordBreak: "break-all" }}>
-                   {selectedTicket.email || "N/A"}
-                 </div>
-               </div>
-
-               <div className="ticket-info-item">
-                 <div className="ticket-info-head">Phone Number</div>
-                 <div className="ticket-info-value">{selectedTicket.phone || "N/A"}</div>
-               </div>
-
-               <div className="ticket-info-item">
-                 <div className="ticket-info-head">Order Number</div>
-                 <div className="ticket-info-value">{selectedTicket.orderNumber || "N/A"}</div>
-               </div>
-             </div>
-           </div>
-
-           <div className="ticket-content-grid">
-             <div className="ticket-message-card">
-               <div className="ticket-field">
-                 <label>Subject</label>
-                 <input 
-                   type="text" 
-                   value={selectedTicket.subject || ""} 
-                   readOnly 
-                   style={{ backgroundColor: "#f5f5f5", cursor: "default" }}
-                 />
-               </div>
-
-               <div className="ticket-field">
-                 <label>Message</label>
-                 <textarea 
-                   value={selectedTicket.message || ""} 
-                   readOnly 
-                   rows={8}
-                   style={{ backgroundColor: "#f5f5f5", cursor: "default" }}
-                 />
-               </div>
-             </div>
-
-             <div className="ticket-actions-card">
-               <div className="ticket-field">
-                 <label>Issue Type</label>
-                 <select value={issueType} onChange={(e) => setIssueType(e.target.value)}>
-                   <option>Refund</option>
-                   <option>Wrong Order</option>
-                   <option>Missing Item</option>
-                   <option>Late Delivery</option>
-                   <option>Other</option>
-                 </select>
-               </div>
-
-               <div className="ticket-field">
-                 <label>Refund Eligibility</label>
-                 <select value={refundEligibility} onChange={(e) => setRefundEligibility(e.target.value)}>
-                   <option>Approve</option>
-                   <option>Reject</option>
-                   <option>Pending</option>
-                 </select>
-               </div>
-
-               <div className="ticket-field">
-                 <label>Status</label>
-                 <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                   <option>Pending</option>
-                   <option>Open</option>
-                   <option>Processed</option>
-                 </select>
-               </div>
-
-               <div className="ticket-field">
-                 <label>Internal Note</label>
-                 <textarea
-                   rows={6}
-                   placeholder="Write internal note..."
-                   value={note}
-                   onChange={(e) => setNote(e.target.value)}
-                 />
-               </div>
-
-               <div className="ticket-button-column">
-                 <button className="update-btn" onClick={handleUpdate}>
-                   Update
-                 </button>
-
-                 {savedMessage && (
-                   <span className="ticket-message saved" style={{ color: savedMessage.includes("Error") ? "#ff4d6d" : "#39a86f" }}>
-                     {savedMessage}
-                   </span>
-                 )}
-               </div>
-             </div>
-           </div>
-
-           <div className="ticket-order-card">
-             <h3>Order Items</h3>
-
-             {selectedTicket?.orderItems?.length > 0 ? (
-               <table className="ticket-table">
-                 <thead>
-                   <tr>
-                     <th>Product</th>
-                     <th>Price</th>
-                     <th>Quantity</th>
-                     <th>Subtotal</th>
-                   </tr>
-                 </thead>
-
-                 <tbody>
-                   {selectedTicket.orderItems.map((item, index) => (
-                     <tr key={index}>
-                       <td className="product-cell">
-                         <img src={item.image || rose} alt={item.name} style={{ width: "40px", height: "40px", objectFit: "contain" }} />
-                         {item.name}
-                       </td>
-                       <td>${Number(item.price || 0).toFixed(2)}</td>
-                       <td>{item.qty || 1}</td>
-                       <td>${(Number(item.price || 0) * (item.qty || 1)).toFixed(2)}</td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-             ) : (
-               <p style={{ textAlign: "center", padding: "20px" }}>No order items found for this ticket.</p>
-             )}
-           </div>
-
-         </div>
-       </div>
-     </div>
-   </div>
- );
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+            <select value={issueType} onChange={(e) => setIssueType(e.target.value)} style={{ padding: "10px", borderRadius: "8px" }}>
+              <option>Refund</option>
+              <option>Wrong Order</option>
+              <option>Missing Item</option>
+              <option>Late Delivery</option>
+              <option>Other</option>
+            </select>
+            <select value={refundEligibility} onChange={(e) => setRefundEligibility(e.target.value)} style={{ padding: "10px", borderRadius: "8px" }}>
+              <option>Pending</option>
+              <option>Approve</option>
+              <option>Reject</option>
+            </select>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ padding: "10px", borderRadius: "8px" }}>
+              <option>Pending</option>
+              <option>Open</option>
+              <option>Processed</option>
+            </select>
+            <button onClick={handleUpdate} style={{
+              background: themeData.primary,
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              padding: "10px",
+              cursor: "pointer",
+            }}>Update Ticket</button>
+          </div>
+          {message && <p style={{ marginTop: "16px", textAlign: "center", color: "#39a86f" }}>{message}</p>}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default TicketManagement;

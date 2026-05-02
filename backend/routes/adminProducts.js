@@ -54,17 +54,17 @@ router.post("/", upload.single("image"), async (req, res) => {
       : req.body.image || "";
 
     const product = new Product({
-      name,
-      price: Number(price),
-      description,
-      stock: Number(stock),
-      image: imageUrl,
-      scent: scent || "",
-      skinType: normalizeArray(skinType),
-      ingredients: normalizeArray(ingredients),
-      isCustomizable: isCustomizable === "true" || isCustomizable === true,
-      theme: theme || "purple",
-    });
+  name,
+  price: Number(price),
+  description,
+  stock: Number(stock),
+  image: imageUrl,
+  scent: scent || "",
+  skinType: normalizeArray(skinType),
+  ingredients: normalizeArray(ingredients),
+  isCustomizable: isCustomizable === "true" || isCustomizable === true,
+  theme: theme || "purple",  // This accepts any string, but will validate against enum
+});
 
     const savedProduct = await product.save();
     res.status(201).json(savedProduct);

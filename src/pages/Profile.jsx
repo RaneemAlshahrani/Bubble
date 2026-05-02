@@ -226,7 +226,6 @@ function Profile() {
   if (loading) {
     return (
       <div className="purple-page" style={{ minHeight: "100vh" }}>
-        <Navbar />
         <div style={{ textAlign: "center", paddingTop: "200px" }}>
           Loading profile...
         </div>
@@ -236,7 +235,6 @@ function Profile() {
 
   return (
     <div className="purple-page" style={{ minHeight: "100vh" }}>
-      <Navbar />
 
       <div
         style={{

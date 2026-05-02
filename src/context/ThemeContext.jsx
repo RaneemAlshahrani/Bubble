@@ -21,9 +21,6 @@ export const themes = {
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
     borderHover: 'rgba(255,255,255,0.4)',
-    success: '#39a86f',
-    error: '#ff4d6d',
-    warning: '#ff9f43',
   },
   pink: {
     name: 'pink',
@@ -42,9 +39,6 @@ export const themes = {
     bubbleOpacity: 0.5,
     borderColor: 'rgba(255,255,255,0.25)',
     borderHover: 'rgba(255,255,255,0.4)',
-    success: '#39a86f',
-    error: '#ff4d6d',
-    warning: '#ff9f43',
   },
   yellow: {
     name: 'yellow',
@@ -63,9 +57,6 @@ export const themes = {
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
     borderHover: 'rgba(255,255,255,0.4)',
-    success: '#39a86f',
-    error: '#ff4d6d',
-    warning: '#ff9f43',
   },
   green: {
     name: 'green',
@@ -84,9 +75,6 @@ export const themes = {
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
     borderHover: 'rgba(255,255,255,0.4)',
-    success: '#39a86f',
-    error: '#ff4d6d',
-    warning: '#ff9f43',
   },
   blue: {
     name: 'blue',
@@ -105,10 +93,7 @@ export const themes = {
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
     borderHover: 'rgba(255,255,255,0.4)',
-    success: '#39a86f',
-    error: '#ff4d6d',
-    warning: '#ff9f43',
-  }
+  },
 };
 
 export const useTheme = () => {
@@ -128,7 +113,6 @@ export const ThemeProvider = ({ children }) => {
       setCurrentTheme(themeName);
       setThemeData(themes[themeName]);
       localStorage.setItem('theme', themeName);
-      // Dispatch event for components that need to know
       window.dispatchEvent(new CustomEvent('themeChange', { detail: themes[themeName] }));
     }
   };

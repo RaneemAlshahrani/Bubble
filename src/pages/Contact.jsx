@@ -1,11 +1,12 @@
 // frontend/src/pages/Contact.jsx
 import { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { getCurrentUser, getAuthToken, getCurrentUserId } from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 function Contact() {
+  const { themeData } = useTheme();
   const [form, setForm] = useState({
     fullName: "",
     orderId: "",
@@ -103,7 +104,6 @@ function Contact() {
       }
     };
 
-    // Load orders when user is logged in
     if (form.email) {
       loadUserOrders();
     } else {
@@ -197,7 +197,7 @@ function Contact() {
 
       if (!response.ok) throw new Error("Failed to submit ticket");
 
-      setSuccessMessage("Support ticket submitted successfully");
+      setSuccessMessage("✅ Support ticket submitted successfully!");
 
       // Clear only ticket-specific fields
       setForm((prev) => ({
@@ -207,298 +207,264 @@ function Contact() {
         message: "",
       }));
 
-      // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(""), 5000);
     } catch (error) {
       console.error("Error submitting ticket:", error);
-      setSuccessMessage("Failed to submit ticket. Please try again.");
+      setSuccessMessage("❌ Failed to submit ticket. Please try again.");
     }
   };
 
   const visibleFaqs = showAll ? faqs : faqs.slice(0, 5);
 
-  // Helper function to format order ID
-  const formatOrderId = (order) => {
-    if (order._id) return `#${order._id.slice(-8)}`;
-    if (order.id) return order.id;
-    return "N/A";
-  };
-
   if (loading) {
     return (
-      <div className="purple-page" style={{ minHeight: "100vh" }}>
-        <Navbar />
-        <div style={{ textAlign: "center", paddingTop: "200px" }}>
-          Loading...
-        </div>
+      <div style={{ textAlign: "center", padding: "100px 20px" }}>
+        <div style={{ fontSize: "18px", color: themeData.textColor }}>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="purple-page" style={{ minHeight: "100vh" }}>
-      <div
-        style={{
-          position: "relative",
-          zIndex: 2,
-          paddingTop: isMobile ? "90px" : "95px",
-          width: isMobile ? "94%" : "92%",
-          maxWidth: "1200px",
-          margin: "0 auto",
-          paddingBottom: "40px",
-        }}
-      >
-        <Navbar />
+    <div style={{
+      width: "94%",
+      maxWidth: "1200px",
+      margin: "0 auto",
+      paddingBottom: "40px",
+    }}>
+      <div style={{
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        gap: "24px",
+      }}>
+        {/* FAQs Section */}
+        <div style={{
+          width: isMobile ? "100%" : "35%",
+          background: themeData.cardBg,
+          border: `1px solid ${themeData.borderColor}`,
+          borderRadius: "28px",
+          padding: isMobile ? "24px 20px" : "28px 24px",
+          backdropFilter: "blur(14px)",
+        }}>
+          <h2 style={{
+            marginTop: 0,
+            marginBottom: "24px",
+            fontSize: isMobile ? "28px" : "32px",
+            fontWeight: "600",
+            color: themeData.textColor,
+          }}>
+            ❓ FAQs
+          </h2>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            gap: "16px",
-            marginTop: "30px",
-          }}
-        >
-          {/* FAQs Section */}
-          <div
-            style={{
-              width: isMobile ? "100%" : "32%",
-              minHeight: isMobile ? "auto" : "500px",
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              borderRadius: "28px",
-              padding: isMobile ? "20px 16px" : "24px 20px",
-              backdropFilter: "blur(14px)",
-              boxSizing: "border-box",
-            }}
-          >
-            <h2
-              style={{
-                marginTop: 0,
-                marginBottom: isMobile ? "18px" : "24px",
-                fontSize: isMobile ? "26px" : "32px",
-                fontWeight: "600",
-                color: "#2f2f2f",
-              }}
-            >
-              FAQs
-            </h2>
-
-            {faqs.length > 0 ? (
-              <>
-                {visibleFaqs.map((faq) => (
-                  <div key={faq._id} style={{ marginBottom: "20px" }}>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: isMobile ? "16px" : "18px",
-                        fontWeight: "500",
-                        color: "#2f2f2f",
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      {faq.question}
-                    </p>
-
-                    <p
-                      style={{
-                        marginTop: "6px",
-                        marginBottom: 0,
-                        fontSize: isMobile ? "14px" : "16px",
-                        color: "#666",
-                      }}
-                    >
-                      {faq.answer}
-                    </p>
-                  </div>
-                ))}
-
-                {faqs.length > 5 && (
-                  <button
-                    onClick={() => setShowAll(!showAll)}
-                    style={{
-                      marginTop: "10px",
-                      background: "transparent",
-                      border: "none",
-                      color: "#7c3aed",
-                      cursor: "pointer",
-                      fontWeight: "500",
-                    }}
-                  >
-                    {showAll ? "Show Less" : "Show More"}
-                  </button>
-                )}
-              </>
-            ) : (
-              <p>No FAQs available</p>
-            )}
-          </div>
-
-          {/* Contact Form Section */}
-          <div
-            style={{
-              flex: 1,
-              width: "100%",
-              minHeight: "500px",
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              borderRadius: "28px",
-              padding: isMobile ? "20px 16px" : "22px 20px",
-              backdropFilter: "blur(14px)",
-              boxSizing: "border-box",
-            }}
-          >
-            <h1
-              style={{
-                marginTop: 0,
-                marginBottom: "12px",
-                fontSize: isMobile ? "28px" : "32px",
-                fontWeight: "600",
-                color: "#2f2f2f",
-              }}
-            >
-              Contact Us
-            </h1>
-
-            {/* Full Name */}
-            <Input 
-              label="Full Name" 
-              name="fullName" 
-              value={form.fullName} 
-              onChange={handleChange} 
-              error={errors.fullName} 
-            />
-
-            {/* Order Number - Dropdown with user's orders from BACKEND */}
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", color: "#444" }}>
-                Order Number
-              </label>
-              
-              {fetchingOrders ? (
-                <div style={{
-                  padding: "12px 14px",
-                  borderRadius: "10px",
-                  border: "1px solid #e0e0e0",
-                  backgroundColor: "#f5f5f5",
-                  fontSize: "14px",
-                  color: "#999",
-                }}>
-                  Loading your orders...
+          {faqs.length > 0 ? (
+            <>
+              {visibleFaqs.map((faq) => (
+                <div key={faq._id} style={{ marginBottom: "24px" }}>
+                  <p style={{
+                    margin: 0,
+                    fontSize: isMobile ? "16px" : "18px",
+                    fontWeight: "600",
+                    color: themeData.primary,
+                  }}>
+                    {faq.question}
+                  </p>
+                  <p style={{
+                    marginTop: "8px",
+                    marginBottom: 0,
+                    fontSize: isMobile ? "14px" : "15px",
+                    color: themeData.textLight,
+                    lineHeight: 1.5,
+                  }}>
+                    {faq.answer}
+                  </p>
                 </div>
-              ) : userOrders.length > 0 ? (
-                <select
-                  name="orderId"
-                  value={form.orderId}
-                  onChange={handleChange}
+              ))}
+
+              {faqs.length > 5 && (
+                <button
+                  onClick={() => setShowAll(!showAll)}
                   style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid #b9b9b9",
-                    outline: "none",
+                    marginTop: "10px",
+                    background: "transparent",
+                    border: "none",
+                    color: themeData.primary,
+                    cursor: "pointer",
+                    fontWeight: "500",
                     fontSize: "14px",
-                    fontFamily: "Josefin Sans, sans-serif",
-                    boxSizing: "border-box",
-                    background: "white",
-                    cursor: "pointer"
                   }}
                 >
-                  <option value="">-- Select an order (optional) --</option>
-                  {userOrders.map((order) => (
-                    <option key={order._id} value={order._id}>
-                      {formatOrderId(order)} - {order.items?.length || 0} item(s) - {order.status || "Pending"} - {new Date(order.createdAt).toLocaleDateString()}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  name="orderId"
-                  placeholder="No orders found. Type manually (optional)"
-                  value={form.orderId}
-                  onChange={handleChange}
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid #b9b9b9",
-                    outline: "none",
-                    fontSize: "14px",
-                    fontFamily: "Josefin Sans, sans-serif",
-                    boxSizing: "border-box",
-                    background: "white",
-                  }}
-                />
+                  {showAll ? "▲ Show Less" : "▼ Show More"}
+                </button>
               )}
-              <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
-                {userOrders.length > 0 
-                  ? `Select an order from your history (${userOrders.length} orders found)` 
-                  : "No orders in your history. You can type your order number manually."}
-              </small>
-            </div>
+            </>
+          ) : (
+            <p style={{ color: themeData.textLight }}>No FAQs available</p>
+          )}
+        </div>
 
-            {/* Email - Read Only */}
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", color: "#444" }}>
-                Email
-              </label>
-              <div
+        {/* Contact Form Section */}
+        <div style={{
+          flex: 1,
+          background: themeData.cardBg,
+          border: `1px solid ${themeData.borderColor}`,
+          borderRadius: "28px",
+          padding: isMobile ? "24px 20px" : "28px 24px",
+          backdropFilter: "blur(14px)",
+        }}>
+          <h1 style={{
+            marginTop: 0,
+            marginBottom: "8px",
+            fontSize: isMobile ? "32px" : "36px",
+            fontWeight: "600",
+            color: themeData.textColor,
+          }}>
+            📧 Contact Us
+          </h1>
+          <p style={{
+            marginBottom: "24px",
+            color: themeData.textLight,
+            fontSize: "15px",
+          }}>
+            Have questions? We're here to help!
+          </p>
+
+          {/* Full Name */}
+          <Input 
+            label="Full Name *" 
+            name="fullName" 
+            value={form.fullName} 
+            onChange={handleChange} 
+            error={errors.fullName} 
+          />
+
+          {/* Order Number Dropdown */}
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontSize: "14px", color: themeData.textColor, fontWeight: "500" }}>
+              Order Number
+            </label>
+            
+            {fetchingOrders ? (
+              <div style={{
+                padding: "12px 14px",
+                borderRadius: "10px",
+                border: "1px solid #e0e0e0",
+                backgroundColor: "#f5f5f5",
+                fontSize: "14px",
+                color: "#999",
+              }}>
+                Loading your orders...
+              </div>
+            ) : userOrders.length > 0 ? (
+              <select
+                name="orderId"
+                value={form.orderId}
+                onChange={handleChange}
                 style={{
                   width: "100%",
                   padding: "12px 14px",
                   borderRadius: "10px",
-                  border: "1px solid #e0e0e0",
-                  backgroundColor: "#f5f5f5",
+                  border: "1px solid #b9b9b9",
+                  outline: "none",
                   fontSize: "14px",
                   fontFamily: "Josefin Sans, sans-serif",
-                  boxSizing: "border-box",
-                  color: "#666",
-                  cursor: "not-allowed",
-                  wordBreak: "break-all",
-                  overflowWrap: "break-word",
+                  background: "white",
+                  cursor: "pointer"
                 }}
               >
-                {form.email || "No email set"}
-              </div>
-              {errors.email && <p style={{ color: "#ff5a45", fontSize: "12px", marginTop: "6px" }}>{errors.email}</p>}
-            </div>
-
-            {/* Phone Number */}
-            <Input 
-              label="Phone Number" 
-              name="phone" 
-              value={form.phone} 
-              onChange={handleChange} 
-              error={errors.phone} 
-            />
-
-            {/* Subject */}
-            <Input 
-              label="Subject" 
-              name="subject" 
-              value={form.subject} 
-              onChange={handleChange} 
-              error={errors.subject} 
-            />
-
-            {/* Message */}
-            <Input 
-              label="Message" 
-              name="message" 
-              value={form.message} 
-              onChange={handleChange} 
-              error={errors.message} 
-              textarea 
-            />
-
-            <Button text="Submit" variant="purple" onClick={handleSubmit} />
-
-            {successMessage && (
-              <p style={{ color: successMessage.includes("successfully") ? "#39a86f" : "#ff5a45", marginTop: "10px" }}>
-                {successMessage}
-              </p>
+                <option value="">-- Select an order (optional) --</option>
+                {userOrders.map((order) => (
+                  <option key={order._id} value={order._id}>
+                    #{order._id?.slice(-8)} - {order.items?.length || 0} item(s) - {order.status || "Pending"}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                name="orderId"
+                placeholder="No orders found. Type manually (optional)"
+                value={form.orderId}
+                onChange={handleChange}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: "10px",
+                  border: "1px solid #b9b9b9",
+                  outline: "none",
+                  fontSize: "14px",
+                  fontFamily: "Josefin Sans, sans-serif",
+                  background: "white",
+                }}
+              />
             )}
+            <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+              {userOrders.length > 0 
+                ? `📦 ${userOrders.length} orders found in your history` 
+                : "No orders yet. You can type your order number manually."}
+            </small>
           </div>
+
+          {/* Email - Read Only */}
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontSize: "14px", color: themeData.textColor, fontWeight: "500" }}>
+              Email *
+            </label>
+            <div style={{
+              width: "100%",
+              padding: "12px 14px",
+              borderRadius: "10px",
+              border: "1px solid #e0e0e0",
+              backgroundColor: "#f5f5f5",
+              fontSize: "14px",
+              fontFamily: "Josefin Sans, sans-serif",
+              color: "#666",
+              cursor: "not-allowed",
+            }}>
+              {form.email || "No email set"}
+            </div>
+            {errors.email && <p style={{ color: "#ff5a45", fontSize: "12px", marginTop: "6px" }}>{errors.email}</p>}
+          </div>
+
+          {/* Phone Number */}
+          <Input 
+            label="Phone Number" 
+            name="phone" 
+            value={form.phone} 
+            onChange={handleChange} 
+            error={errors.phone} 
+          />
+
+          {/* Subject */}
+          <Input 
+            label="Subject *" 
+            name="subject" 
+            value={form.subject} 
+            onChange={handleChange} 
+            error={errors.subject} 
+          />
+
+          {/* Message */}
+          <Input 
+            label="Message *" 
+            name="message" 
+            value={form.message} 
+            onChange={handleChange} 
+            error={errors.message} 
+            textarea 
+            rows={5}
+          />
+
+          <Button text="Submit Ticket" variant="purple" onClick={handleSubmit} style={{ width: "100%", marginTop: "10px" }} />
+
+          {successMessage && (
+            <p style={{ 
+              color: successMessage.includes("✅") ? "#39a86f" : "#ff4d6d", 
+              marginTop: "16px",
+              textAlign: "center",
+              fontWeight: "500"
+            }}>
+              {successMessage}
+            </p>
+          )}
         </div>
       </div>
     </div>
