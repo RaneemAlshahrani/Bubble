@@ -11,13 +11,19 @@ export const themes = {
     primaryLight: '#b99af1',
     background: 'linear-gradient(135deg, #cbb7e6, #a88bd8)',
     cardBg: 'rgba(255,255,255,0.12)',
+    cardBgHover: 'rgba(255,255,255,0.18)',
     buttonBg: '#8f4bd8',
     buttonHover: '#7a3fc2',
     textColor: '#2e3d4c',
+    textLight: '#666',
     iconColor: '#2e3d4c',
     iconHover: '#7a3fc2',
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
+    borderHover: 'rgba(255,255,255,0.4)',
+    success: '#39a86f',
+    error: '#ff4d6d',
+    warning: '#ff9f43',
   },
   pink: {
     name: 'pink',
@@ -26,13 +32,19 @@ export const themes = {
     primaryLight: '#d99aa5',
     background: 'linear-gradient(135deg, #b45f69, #d8a0aa)',
     cardBg: 'rgba(255,255,255,0.12)',
+    cardBgHover: 'rgba(255,255,255,0.18)',
     buttonBg: '#b84a57',
     buttonHover: '#9e3f4a',
     textColor: '#5a2d36',
+    textLight: '#8a5a63',
     iconColor: '#5a2d36',
     iconHover: '#9e3f4a',
     bubbleOpacity: 0.5,
     borderColor: 'rgba(255,255,255,0.25)',
+    borderHover: 'rgba(255,255,255,0.4)',
+    success: '#39a86f',
+    error: '#ff4d6d',
+    warning: '#ff9f43',
   },
   yellow: {
     name: 'yellow',
@@ -41,13 +53,19 @@ export const themes = {
     primaryLight: '#f0dc82',
     background: 'linear-gradient(135deg, #f5e6a3, #e8d47a)',
     cardBg: 'rgba(255,255,255,0.12)',
+    cardBgHover: 'rgba(255,255,255,0.18)',
     buttonBg: '#d4a843',
     buttonHover: '#c29738',
     textColor: '#5c4a1e',
+    textLight: '#8a7240',
     iconColor: '#5c4a1e',
     iconHover: '#c29738',
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
+    borderHover: 'rgba(255,255,255,0.4)',
+    success: '#39a86f',
+    error: '#ff4d6d',
+    warning: '#ff9f43',
   },
   green: {
     name: 'green',
@@ -56,13 +74,19 @@ export const themes = {
     primaryLight: '#9ed6b0',
     background: 'linear-gradient(135deg, #a8e6cf, #7ecba1)',
     cardBg: 'rgba(255,255,255,0.12)',
+    cardBgHover: 'rgba(255,255,255,0.18)',
     buttonBg: '#3d8f5e',
     buttonHover: '#2d6b46',
     textColor: '#1a4d2e',
+    textLight: '#4a7a5e',
     iconColor: '#1a4d2e',
     iconHover: '#2d6b46',
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
+    borderHover: 'rgba(255,255,255,0.4)',
+    success: '#39a86f',
+    error: '#ff4d6d',
+    warning: '#ff9f43',
   },
   blue: {
     name: 'blue',
@@ -71,13 +95,19 @@ export const themes = {
     primaryLight: '#9cc9e0',
     background: 'linear-gradient(135deg, #a8d8ea, #7cb8d4)',
     cardBg: 'rgba(255,255,255,0.12)',
+    cardBgHover: 'rgba(255,255,255,0.18)',
     buttonBg: '#3a7ca5',
     buttonHover: '#2d6182',
     textColor: '#1a3a4d',
+    textLight: '#4a6a7d',
     iconColor: '#1a3a4d',
     iconHover: '#2d6182',
     bubbleOpacity: 0.4,
     borderColor: 'rgba(255,255,255,0.25)',
+    borderHover: 'rgba(255,255,255,0.4)',
+    success: '#39a86f',
+    error: '#ff4d6d',
+    warning: '#ff9f43',
   }
 };
 
@@ -98,6 +128,8 @@ export const ThemeProvider = ({ children }) => {
       setCurrentTheme(themeName);
       setThemeData(themes[themeName]);
       localStorage.setItem('theme', themeName);
+      // Dispatch event for components that need to know
+      window.dispatchEvent(new CustomEvent('themeChange', { detail: themes[themeName] }));
     }
   };
 
@@ -110,7 +142,7 @@ export const ThemeProvider = ({ children }) => {
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, themeData, changeTheme }}>
+    <ThemeContext.Provider value={{ currentTheme, themeData, changeTheme, themes }}>
       {children}
     </ThemeContext.Provider>
   );

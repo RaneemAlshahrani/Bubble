@@ -1,10 +1,6 @@
 // frontend/src/utils/currency.js
 
-/**
- * Format price in Saudi Riyal (SAR)
- * @param {number|string} price - The price to format
- * @returns {string} Formatted price with SAR symbol
- */
+// Format price as Saudi Riyal (SAR)
 export const formatSAR = (price) => {
   if (price === undefined || price === null) return "0 ﷼";
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
@@ -12,11 +8,7 @@ export const formatSAR = (price) => {
   return `${numPrice.toFixed(2)} ﷼`;
 };
 
-/**
- * Format price without decimal places for display
- * @param {number|string} price - The price to format
- * @returns {string} Formatted price with SAR symbol (no decimals)
- */
+// Format price without decimals
 export const formatSARSimple = (price) => {
   if (price === undefined || price === null) return "0 ﷼";
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
@@ -24,28 +16,17 @@ export const formatSARSimple = (price) => {
   return `${Math.round(numPrice)} ﷼`;
 };
 
-/**
- * Parse SAR string back to number
- * @param {string} sarString - SAR formatted string
- * @returns {number} Numeric value
- */
+// Parse SAR string to number
 export const parseSAR = (sarString) => {
   if (!sarString) return 0;
   const match = sarString.match(/[\d.]+/);
   return match ? parseFloat(match[0]) : 0;
 };
 
-/**
- * Get SAR symbol for display
- * @returns {string} SAR symbol
- */
+// Get SAR symbol
 export const getSARIcon = () => "﷼";
 
-/**
- * Format number as currency with SAR
- * @param {number} amount - Amount to format
- * @returns {string} Formatted currency
- */
+// Format with Intl API
 export const toSAR = (amount) => {
   return new Intl.NumberFormat('ar-SA', {
     style: 'currency',
@@ -60,5 +41,4 @@ export const CURRENCY = {
   symbol: "﷼",
   name: "Saudi Riyal",
   locale: "ar-SA",
-  exchangeRate: 1,
 };
