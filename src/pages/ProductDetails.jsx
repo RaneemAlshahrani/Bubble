@@ -1,14 +1,15 @@
+// src/pages/ProductDetails.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getCurrentUserId, getCurrentUser } from "../utils/auth";
+import { getCurrentUserId, getCurrentUser, getAuthToken } from "../utils/auth";
 import Button from "../components/Button";
 import bubble7 from "../assets/bubble7.png";
 import bubble8 from "../assets/bubble8.png";
 import heart from "../assets/heart.png";
 import heartFilled from "../assets/heart-filled.png";
 
-// Profile Icon SVG (same as navbar)
-const ProfileIcon = ({ color = "#333", hoverColor = "#8f4bd8" }) => {
+// Profile Icon SVG
+const ProfileIcon = ({ color = "#2e3d4c", hoverColor = "#7a3fc2" }) => {
   const [isHovered, setIsHovered] = useState(false);
   const strokeColor = isHovered ? hoverColor : color;
   
@@ -37,38 +38,22 @@ function ProductDetails() {
     const { id } = useParams();
     const userId = getCurrentUserId();
     const currentUser = getCurrentUser();
+    const token = getAuthToken();
     const isLoggedIn = !!userId;
 
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [addedToCart, setAddedToCart] = useState(false);
     const [reviewText, setReviewText] = useState("");
     const [liked, setLiked] = useState(false);
 
-    // Get theme-based colors
+    // Get theme-based colors (default is purple)
     const getThemeColors = (theme) => {
         switch(theme) {
-            case 'purple':
-                return {
-                    background: "linear-gradient(135deg, #cbb7e6, #a88bd8)",
-                    buttonColor: "#8f4bd8",
-                    buttonHover: "#7a3fc2",
-                    secondaryButtonColor: "#b99af1",
-                    textColor: "#2e3d4c",
-                    accentColor: "#b99af1",
-                    borderColor: "rgba(168, 139, 216, 0.3)",
-                    cardBg: "rgba(255,255,255,0.12)",
-                    labelColor: "#7a58b8",
-                    valueColor: "#2e3d4c",
-                    reviewBg: "rgba(255,255,255,0.08)",
-                    reviewBorder: "rgba(168, 139, 216, 0.3)",
-                    bubbleOpacity: 0.12,
-                    iconColor: "#2e3d4c",
-                    iconHoverColor: "#7a3fc2"
-                };
             case 'yellow':
                 return {
                     background: "linear-gradient(135deg, #f5e6a3, #e8d47a)",
@@ -123,7 +108,7 @@ function ProductDetails() {
                     iconColor: "#1a3a4d",
                     iconHoverColor: "#2d6182"
                 };
-            default: // pink
+            case 'pink':
                 return {
                     background: "linear-gradient(135deg, #b45f69, #d8a0aa)",
                     buttonColor: "#b84a57",
@@ -141,31 +126,46 @@ function ProductDetails() {
                     iconColor: "#5a2d36",
                     iconHoverColor: "#9e3f4a"
                 };
+            default: // purple (default theme)
+                return {
+                    background: "linear-gradient(135deg, #cbb7e6, #a88bd8)",
+                    buttonColor: "#8f4bd8",
+                    buttonHover: "#7a3fc2",
+                    secondaryButtonColor: "#b99af1",
+                    textColor: "#2e3d4c",
+                    accentColor: "#b99af1",
+                    borderColor: "rgba(168, 139, 216, 0.3)",
+                    cardBg: "rgba(255,255,255,0.12)",
+                    labelColor: "#7a58b8",
+                    valueColor: "#2e3d4c",
+                    reviewBg: "rgba(255,255,255,0.08)",
+                    reviewBorder: "rgba(168, 139, 216, 0.3)",
+                    bubbleOpacity: 0.12,
+                    iconColor: "#2e3d4c",
+                    iconHoverColor: "#7a3fc2"
+                };
         }
     };
 
-    const [themeColors, setThemeColors] = useState(getThemeColors('pink'));
+    const [themeColors, setThemeColors] = useState(getThemeColors('purple'));
 
     // Handle screen resize
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth <= 768);
         };
-
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Product data
+    // Fetch product data
     useEffect(() => {
         setLoading(true);
         fetch(`http://localhost:5000/api/products/${id}`)
             .then((res) => res.json())
             .then((data) => {
                 setProduct(data);
-                setThemeColors(getThemeColors(data.theme));
-                const storedReviews = JSON.parse(localStorage.getItem(`reviews_${id}`)) || data.reviews || [];
-                setReviews(storedReviews);
+                setThemeColors(getThemeColors(data.theme || 'purple'));
                 setLoading(false);
             })
             .catch((err) => {
@@ -174,12 +174,34 @@ function ProductDetails() {
             });
     }, [id]);
 
+    // Fetch reviews from backend
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const response = await fetch(`http://localhost:5000/api/reviews/product/${id}`);
+                const data = await response.json();
+                setReviews(data);
+            } catch (error) {
+                console.error("Error loading reviews:", error);
+            }
+        };
+        
+        if (id) {
+            fetchReviews();
+        }
+    }, [id]);
+
+    // Check wishlist status
     useEffect(() => {
         if (!userId || !id) return;
         
         const checkWishlist = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
+                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`, {
+                    headers: {
+                        "Authorization": token ? `Bearer ${token}` : "",
+                    },
+                });
                 const data = await response.json();
                 const exists = data.some((item) => item.productId?._id === id);
                 setLiked(exists);
@@ -191,12 +213,12 @@ function ProductDetails() {
         checkWishlist();
         window.addEventListener("wishlistUpdated", checkWishlist);
         return () => window.removeEventListener("wishlistUpdated", checkWishlist);
-    }, [userId, id]);
+    }, [userId, id, token]);
 
     if (loading) {
         return (
             <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: themeColors.background }}>
-                Loading product...
+                <div style={{ color: themeColors.textColor }}>Loading product...</div>
             </div>
         );
     }
@@ -204,7 +226,7 @@ function ProductDetails() {
     if (!product) {
         return (
             <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: themeColors.background }}>
-                Product not available
+                <div style={{ color: themeColors.textColor }}>Product not available</div>
             </div>
         );
     }
@@ -229,6 +251,7 @@ function ProductDetails() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": token ? `Bearer ${token}` : "",
                 },
                 body: JSON.stringify({
                     userId: userId,
@@ -257,7 +280,11 @@ function ProductDetails() {
 
         try {
             if (liked) {
-                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
+                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`, {
+                    headers: {
+                        "Authorization": token ? `Bearer ${token}` : "",
+                    },
+                });
                 const data = await response.json();
                 const wishlistItem = data.find(
                     (item) => item.productId?._id === product._id
@@ -265,6 +292,9 @@ function ProductDetails() {
                 if (wishlistItem) {
                     await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
                         method: "DELETE",
+                        headers: {
+                            "Authorization": token ? `Bearer ${token}` : "",
+                        },
                     });
                 }
                 setLiked(false);
@@ -273,6 +303,7 @@ function ProductDetails() {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
+                        "Authorization": token ? `Bearer ${token}` : "",
                     },
                     body: JSON.stringify({
                         userId: userId,
@@ -289,8 +320,8 @@ function ProductDetails() {
         }
     };
 
-    // Add new review
-    const handleSendReview = () => {
+    // Add new review to backend
+    const handleSendReview = async () => {
         if (!isLoggedIn) {
             alert("Please login first");
             return;
@@ -298,26 +329,42 @@ function ProductDetails() {
 
         if (!reviewText.trim()) return;
 
-        const newReview = {
-            id: Date.now(),
-            text: reviewText,
-            userName: currentUser?.fullName || "User",
-            userEmail: currentUser?.email || "",
-            date: new Date().toLocaleDateString(),
-        };
+        setSubmitting(true);
 
-        const updatedReviews = [...reviews, newReview];
-        setReviews(updatedReviews);
-        
-        localStorage.setItem(`reviews_${id}`, JSON.stringify(updatedReviews));
-        
-        setReviewText("");
-        
-        const successMsg = document.createElement("div");
-        successMsg.textContent = "Review added!";
-        successMsg.style.cssText = `position:fixed;bottom:20px;right:20px;background:${themeColors.buttonColor};color:white;padding:10px 20px;border-radius:10px;z-index:1000`;
-        document.body.appendChild(successMsg);
-        setTimeout(() => successMsg.remove(), 2000);
+        try {
+            const response = await fetch("http://localhost:5000/api/reviews", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": token ? `Bearer ${token}` : "",
+                },
+                body: JSON.stringify({
+                    productId: product._id,
+                    text: reviewText,
+                    rating: 5,
+                }),
+            });
+
+            if (response.ok) {
+                const newReview = await response.json();
+                setReviews([newReview, ...reviews]);
+                setReviewText("");
+                
+                const successMsg = document.createElement("div");
+                successMsg.textContent = "Review added!";
+                successMsg.style.cssText = `position:fixed;bottom:20px;right:20px;background:${themeColors.buttonColor};color:white;padding:10px 20px;border-radius:10px;z-index:1000`;
+                document.body.appendChild(successMsg);
+                setTimeout(() => successMsg.remove(), 2000);
+            } else {
+                const error = await response.json();
+                alert(error.message || "Failed to add review");
+            }
+        } catch (error) {
+            console.error("Error adding review:", error);
+            alert("Failed to add review");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -437,6 +484,11 @@ function ProductDetails() {
                         order: isMobile ? 2 : 0,
                     }}
                 >
+                    {/* Product Name */}
+                    <div style={box(isMobile, themeColors)}>
+                        <p style={labelStyle(isMobile, themeColors)}>{product.name}</p>
+                    </div>
+
                     {/* Description */}
                     <div style={box(isMobile, themeColors)}>
                         <p style={labelStyle(isMobile, themeColors)}>Description</p>
@@ -551,10 +603,11 @@ function ProductDetails() {
                         )}
                     </div>
 
-                    {/* Reviews */}
+                    {/* Reviews Section */}
                     <div style={{ ...box(isMobile, themeColors), paddingTop: "14px", paddingBottom: "14px" }}>
                         <p style={labelStyle(isMobile, themeColors)}>Reviews ({reviews.length})</p>
 
+                        {/* Add Review Input */}
                         <div
                             style={{
                                 display: "flex",
@@ -586,20 +639,20 @@ function ProductDetails() {
 
                             <button
                                 onClick={handleSendReview}
-                                disabled={!reviewText.trim()}
+                                disabled={!reviewText.trim() || submitting}
                                 style={{
                                     padding: isMobile ? "10px 12px" : "10px 14px",
                                     borderRadius: "12px",
                                     border: "none",
-                                    background: reviewText.trim() ? themeColors.buttonColor : "#ccc",
+                                    background: reviewText.trim() && !submitting ? themeColors.buttonColor : "#ccc",
                                     color: "white",
-                                    cursor: reviewText.trim() ? "pointer" : "not-allowed",
+                                    cursor: reviewText.trim() && !submitting ? "pointer" : "not-allowed",
                                     fontFamily: "Josefin Sans, sans-serif",
-                                    opacity: reviewText.trim() ? 1 : 0.6,
+                                    opacity: reviewText.trim() && !submitting ? 1 : 0.6,
                                     transition: "all 0.3s ease",
                                 }}
                             >
-                                Send
+                                {submitting ? "Sending..." : "Send"}
                             </button>
                         </div>
 
@@ -617,10 +670,10 @@ function ProductDetails() {
                             </p>
                         )}
                         
-                        {/* Display reviews */}
+                        {/* Display Reviews List */}
                         {reviews.length > 0 ? (
-                            reviews.map((review, index) => (
-                                <div key={review.id || index} style={reviewStyle(isMobile, themeColors)}>
+                            reviews.map((review) => (
+                                <div key={review._id || review.id} style={reviewStyle(isMobile, themeColors)}>
                                     <ProfileIcon color={themeColors.iconColor} hoverColor={themeColors.iconHoverColor} />
                                     <div style={{ flex: 1 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", flexWrap: "wrap", gap: "5px" }}>
@@ -631,7 +684,7 @@ function ProductDetails() {
                                                 <span style={{ fontSize: "10px", color: "#999" }}>{review.date}</span>
                                             )}
                                         </div>
-                                        <span style={{ fontSize: "14px", color: themeColors.valueColor }}>{review.text || review}</span>
+                                        <span style={{ fontSize: "14px", color: themeColors.valueColor }}>{review.text}</span>
                                     </div>
                                 </div>
                             ))
@@ -647,7 +700,7 @@ function ProductDetails() {
     );
 }
 
-// Styled components that change with theme
+// Styled components
 const box = (isMobile, themeColors) => ({
     background: themeColors.cardBg,
     border: `1px solid ${themeColors.borderColor}`,

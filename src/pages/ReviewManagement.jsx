@@ -1,3 +1,5 @@
+// Add this to your ReviewManagement.jsx component
+
 import { useEffect, useState } from "react";
 import userProfile from "../assets/profile-picture.png";
 import AdminSidebar from "../components/AdminSidebar";
@@ -22,7 +24,7 @@ function ReviewManagement() {
     setLoading(true);
     try {
       const token = getAuthToken();
-      const res = await fetch("http://localhost:5000/api/admin/reviews", {
+      const res = await fetch("http://localhost:5000/api/reviews/admin/all", {
         headers: {
           "Authorization": token ? `Bearer ${token}` : "",
           "Content-Type": "application/json"
@@ -31,11 +33,6 @@ function ReviewManagement() {
       const data = await res.json();
 
       setReviews(data);
-
-      // set first product automatically
-      if (data.length > 0) {
-        setSelectedProductId(data[0].productId?._id);
-      }
     } catch (err) {
       console.error(err);
       setMessage("Failed to load reviews");
@@ -58,6 +55,13 @@ function ReviewManagement() {
     ).values(),
   ];
 
+  // Set first product automatically when reviews load
+  useEffect(() => {
+    if (products.length > 0 && !selectedProductId) {
+      setSelectedProductId(products[0].id);
+    }
+  }, [products, selectedProductId]);
+
   // FILTER REVIEWS FOR SELECTED PRODUCT
   const selectedReviews = reviews.filter(
     (r) => r.productId?._id === selectedProductId
@@ -77,7 +81,7 @@ function ReviewManagement() {
     try {
       const token = getAuthToken();
       await fetch(
-        `http://localhost:5000/api/admin/reviews/${reviewToDelete}`,
+        `http://localhost:5000/api/reviews/admin/${reviewToDelete}`,
         { 
           method: "DELETE",
           headers: {
@@ -101,6 +105,7 @@ function ReviewManagement() {
     setReviewToDelete(null);
   };
 
+  // Calculate average rating for a product
   const getAverageRating = (productId) => {
     const productReviews = reviews.filter(r => r.productId?._id === productId);
     if (productReviews.length === 0) return 0;
@@ -241,7 +246,7 @@ function ReviewManagement() {
                     <div className="review-text-box">
                       <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                         <span className="review-user-name">
-                          {review.userName || review.user?.fullName || "Anonymous"}
+                          {review.userName || "Anonymous"}
                         </span>
                         
                         {/* Rating stars for this review */}
@@ -258,7 +263,7 @@ function ReviewManagement() {
                         
                         {review.date && (
                           <span style={{ fontSize: "11px", color: "#999" }}>
-                            {new Date(review.date).toLocaleDateString()}
+                            {review.date}
                           </span>
                         )}
                       </div>
