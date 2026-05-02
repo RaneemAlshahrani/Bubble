@@ -40,7 +40,13 @@ function Cart() {
         const data = await response.json();
 
         const formattedItems = data.map((item) => {
-          const isCustom = !!item.customOptions;
+          const isCustom =
+            item.customOptions &&
+            (
+              item.customOptions.scents?.length > 0 ||
+              item.customOptions.texture ||
+              item.customOptions.ingredients?.length > 0
+            );
 
           return {
             _id: item._id,
@@ -417,13 +423,18 @@ function Cart() {
                             <img src={item.image} alt={item.name} style={{ width: "74px", height: "74px", objectFit: "contain" }} />
                             <div>
                               <span style={{ fontWeight: "500" }}>{item.name}</span>
-                              {item.customOptions && (
-                                <div style={{ marginTop: "6px", padding: "6px 8px", borderRadius: "10px", background: "rgba(255,255,255,0.35)", color: "#555", fontSize: "12px", lineHeight: "1.5", textAlign: "left", maxWidth: "230px" }}>
-                                  {item.customOptions.scents?.length > 0 && <div><strong>Scent:</strong> {item.customOptions.scents.join(", ")}</div>}
-                                  {item.customOptions.texture && <div><strong>Texture:</strong> {item.customOptions.texture}</div>}
-                                  {item.customOptions.ingredients?.length > 0 && <div><strong>Ingredients:</strong> {item.customOptions.ingredients.join(", ")}</div>}
-                                </div>
-                              )}
+                              {item.customOptions &&
+                                (
+                                  item.customOptions.scents?.length > 0 ||
+                                  item.customOptions.texture ||
+                                  item.customOptions.ingredients?.length > 0
+                                ) && (
+                                  <div style={{ marginTop: "6px", padding: "6px 8px", borderRadius: "10px", background: "rgba(255,255,255,0.35)", color: "#555", fontSize: "12px", lineHeight: "1.5", textAlign: "left", maxWidth: "230px" }}>
+                                    {item.customOptions.scents?.length > 0 && <div><strong>Scent:</strong> {item.customOptions.scents.join(", ")}</div>}
+                                    {item.customOptions.texture && <div><strong>Texture:</strong> {item.customOptions.texture}</div>}
+                                    {item.customOptions.ingredients?.length > 0 && <div><strong>Ingredients:</strong> {item.customOptions.ingredients.join(", ")}</div>}
+                                  </div>
+                                )}
                             </div>
                           </div>
                         </td>
