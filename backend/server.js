@@ -14,6 +14,15 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const frontendPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendPath));
+// For any non-API request, serve index.html (for React Router)
+app.get("*", (req, res, next) => {
+ if (req.path.startsWith("/api/")) {
+   return next();
+ }
+ res.sendFile(path.join(frontendPath, "index.html"));
+});
 // ==================== FIX: Handle uploads directory ====================
 // Only create uploads directory in development (not on Vercel)
 if (!process.env.VERCEL) {
