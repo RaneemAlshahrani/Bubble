@@ -1,21 +1,20 @@
 // frontend/src/services/api.js
 
-const isProduction = import.meta.env.PROD;
-
-const API_URL = isProduction
+const API_URL = import.meta.env.PROD
   ? "/api"
   : "http://localhost:5000/api";
 
-// ==================== Helper Functions ====================
+const makeUrl = (endpoint) => {
+  if (endpoint.startsWith("/api/")) return endpoint;
+  if (endpoint.startsWith("/")) return `${API_URL}${endpoint}`;
+  return `${API_URL}/${endpoint}`;
+};
 
 export const getAuthToken = () => localStorage.getItem("token");
 
 export const setAuthToken = (token) => {
-  if (token) {
-    localStorage.setItem("token", token);
-  } else {
-    localStorage.removeItem("token");
-  }
+  if (token) localStorage.setItem("token", token);
+  else localStorage.removeItem("token");
 };
 
 export const getCurrentUser = () => {
@@ -32,18 +31,19 @@ export const saveUser = (user) => {
   localStorage.setItem("user", JSON.stringify(user));
 };
 
-const parseResponse = async (response, fallbackMessage) => {
+const parseResponse = async (response, fallbackMessage = "Something went wrong") => {
   const text = await response.text();
 
   let data = {};
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
+    console.error("Invalid server response:", text);
     throw new Error("Server returned invalid JSON");
   }
 
   if (!response.ok) {
-    throw new Error(data.message || fallbackMessage || "Something went wrong");
+    throw new Error(data.message || fallbackMessage);
   }
 
   return data;
@@ -54,7 +54,7 @@ export const logout = async () => {
     const token = getAuthToken();
 
     if (token) {
-      await fetch(`${API_URL}/auth/logout`, {
+      await fetch(makeUrl("/auth/logout"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -69,8 +69,6 @@ export const logout = async () => {
   }
 };
 
-// ==================== Authenticated Fetch ====================
-
 export const authFetch = async (endpoint, options = {}) => {
   const token = getAuthToken();
 
@@ -79,11 +77,9 @@ export const authFetch = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(makeUrl(endpoint), {
     ...options,
     headers,
   });
@@ -91,10 +87,9 @@ export const authFetch = async (endpoint, options = {}) => {
   return parseResponse(response);
 };
 
-// ==================== Auth Endpoints ====================
-
+// Auth
 export const signup = async (userData) => {
-  const response = await fetch(`${API_URL}/auth/signup`, {
+  const response = await fetch(makeUrl("/auth/signup"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -106,7 +101,7 @@ export const signup = async (userData) => {
 };
 
 export const signin = async (email, password) => {
-  const response = await fetch(`${API_URL}/auth/signin`, {
+  const response = await fetch(makeUrl("/auth/signin"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -130,7 +125,7 @@ export const uploadProfileImage = async (file) => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await fetch(`${API_URL}/auth/profile/image`, {
+  const response = await fetch(makeUrl("/auth/profile/image"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -149,24 +144,16 @@ export const changePassword = async (currentPassword, newPassword) =>
 
 export const verifyToken = async () => authFetch("/auth/verify");
 
-// ==================== Product Endpoints ====================
+// Products
+export const getProducts = async () =>
+  parseResponse(await fetch(makeUrl("/products")), "Failed to fetch products");
 
-export const getProducts = async () => {
-  const response = await fetch(`${API_URL}/products`);
-  return parseResponse(response, "Failed to fetch products");
-};
+export const getProduct = async (id) =>
+  parseResponse(await fetch(makeUrl(`/products/${id}`)), "Product not found");
 
-export const getProduct = async (id) => {
-  const response = await fetch(`${API_URL}/products/${id}`);
-  return parseResponse(response, "Product not found");
-};
-
-// ==================== Cart Endpoints ====================
-
-export const getCart = async (userId) => {
-  const response = await fetch(`${API_URL}/cart/${userId}`);
-  return parseResponse(response, "Failed to fetch cart");
-};
+// Cart
+export const getCart = async (userId) =>
+  parseResponse(await fetch(makeUrl(`/cart/${userId}`)), "Failed to fetch cart");
 
 export const addToCart = async (data) =>
   authFetch("/cart", {
@@ -190,12 +177,9 @@ export const clearCart = async (userId) => {
   await Promise.all(cart.map((item) => removeFromCart(item._id)));
 };
 
-// ==================== Wishlist Endpoints ====================
-
-export const getWishlist = async (userId) => {
-  const response = await fetch(`${API_URL}/wishlist/${userId}`);
-  return parseResponse(response, "Failed to fetch wishlist");
-};
+// Wishlist
+export const getWishlist = async (userId) =>
+  parseResponse(await fetch(makeUrl(`/wishlist/${userId}`)), "Failed to fetch wishlist");
 
 export const addToWishlist = async (data) =>
   authFetch("/wishlist", {
@@ -214,8 +198,7 @@ export const updateWishlistItem = async (id, quantity) =>
     body: JSON.stringify({ quantity }),
   });
 
-// ==================== Order Endpoints ====================
-
+// Orders
 export const createOrder = async (orderData) =>
   authFetch("/orders", {
     method: "POST",
@@ -226,12 +209,9 @@ export const getUserOrders = async () => authFetch("/orders/my-orders");
 
 export const getOrderById = async (id) => authFetch(`/orders/${id}`);
 
-// ==================== Review Endpoints ====================
-
-export const getProductReviews = async (productId) => {
-  const response = await fetch(`${API_URL}/reviews/product/${productId}`);
-  return parseResponse(response, "Failed to fetch reviews");
-};
+// Reviews
+export const getProductReviews = async (productId) =>
+  parseResponse(await fetch(makeUrl(`/reviews/product/${productId}`)), "Failed to fetch reviews");
 
 export const addReview = async (reviewData) =>
   authFetch("/reviews", {
@@ -244,12 +224,9 @@ export const deleteReview = async (id) =>
     method: "DELETE",
   });
 
-// ==================== FAQ Endpoints ====================
-
-export const getFAQs = async () => {
-  const response = await fetch(`${API_URL}/faqs`);
-  return parseResponse(response, "Failed to fetch FAQs");
-};
+// FAQ
+export const getFAQs = async () =>
+  parseResponse(await fetch(makeUrl("/faqs")), "Failed to fetch FAQs");
 
 export const createFAQ = async (faqData) =>
   authFetch("/faqs", {
@@ -268,8 +245,7 @@ export const deleteFAQ = async (id) =>
     method: "DELETE",
   });
 
-// ==================== Ticket Endpoints ====================
-
+// Tickets
 export const getTickets = async () => authFetch("/tickets");
 
 export const createTicket = async (ticketData) =>
@@ -289,12 +265,9 @@ export const deleteTicket = async (id) =>
     method: "DELETE",
   });
 
-// ==================== Custom Options Endpoints ====================
-
-export const getCustomOptions = async () => {
-  const response = await fetch(`${API_URL}/custom-options`);
-  return parseResponse(response, "Failed to fetch custom options");
-};
+// Custom Options
+export const getCustomOptions = async () =>
+  parseResponse(await fetch(makeUrl("/custom-options")), "Failed to fetch custom options");
 
 export const updateCustomOption = async (id, data) =>
   authFetch(`/custom-options/${id}`, {
@@ -302,8 +275,7 @@ export const updateCustomOption = async (id, data) =>
     body: JSON.stringify(data),
   });
 
-// ==================== Admin Endpoints ====================
-
+// Admin
 export const getAdminDashboard = async (salesFilter = "all") =>
   authFetch(`/admin/dashboard?salesFilter=${salesFilter}`);
 
@@ -315,10 +287,8 @@ export const updateOrderStatus = async (orderId, status) =>
     body: JSON.stringify({ status }),
   });
 
-export const getAllProducts = async () => {
-  const response = await fetch(`${API_URL}/admin/products`);
-  return parseResponse(response, "Failed to fetch products");
-};
+export const getAllProducts = async () =>
+  parseResponse(await fetch(makeUrl("/admin/products")), "Failed to fetch products");
 
 export const createProduct = async (productData) => {
   const token = getAuthToken();
@@ -332,7 +302,7 @@ export const createProduct = async (productData) => {
     }
   });
 
-  const response = await fetch(`${API_URL}/admin/products`, {
+  const response = await fetch(makeUrl("/admin/products"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -355,7 +325,7 @@ export const updateProduct = async (id, productData) => {
     }
   });
 
-  const response = await fetch(`${API_URL}/admin/products/${id}`, {
+  const response = await fetch(makeUrl(`/admin/products/${id}`), {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -371,10 +341,8 @@ export const deleteProduct = async (id) =>
     method: "DELETE",
   });
 
-export const getAllPromotions = async () => {
-  const response = await fetch(`${API_URL}/admin/promotions`);
-  return parseResponse(response, "Failed to fetch promotions");
-};
+export const getAllPromotions = async () =>
+  parseResponse(await fetch(makeUrl("/admin/promotions")), "Failed to fetch promotions");
 
 export const createPromotion = async (promoData) =>
   authFetch("/admin/promotions", {
@@ -389,10 +357,8 @@ export const deletePromotion = async (id) =>
 
 export const getAllReviews = async () => authFetch("/reviews/admin/all");
 
-export const getInventory = async () => {
-  const response = await fetch(`${API_URL}/admin/inventory`);
-  return parseResponse(response, "Failed to fetch inventory");
-};
+export const getInventory = async () =>
+  parseResponse(await fetch(makeUrl("/admin/inventory")), "Failed to fetch inventory");
 
 export const updateInventory = async (id, stock) =>
   authFetch(`/admin/inventory/${id}`, {
