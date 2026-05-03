@@ -3,9 +3,26 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
+
+// ==================== MongoDB Connection ====================
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected) return;
+
+  if (!process.env.MONGO_URL) {
+    throw new Error("MONGO_URL is missing in environment variables");
+  }
+
+  await mongoose.connect(process.env.MONGO_URL);
+
+  isConnected = true;
+  console.log("✅ Connected to MongoDB");
+};
 
 // ==================== Middleware ====================
 app.use(
@@ -26,8 +43,26 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Connect DB before API requests
+app.use(async (req, res, next) => {
+  if (!req.path.startsWith("/api/")) {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
+
+    return res.status(500).json({
+      message: "Database connection failed",
+      error: error.message
+    });
+  }
+});
+
 // ==================== Uploads Directory ====================
-// Only use uploads locally, not on Vercel
 if (!process.env.VERCEL) {
   const uploadDir = path.join(__dirname, "uploads");
 
@@ -77,6 +112,8 @@ app.get("/api/health", (req, res) => {
   res.json({
     message: "Bubble Soap Store API is running 🚀",
     status: "healthy",
+    database:
+      mongoose.connection.readyState === 1 ? "connected" : "not connected",
     timestamp: new Date().toISOString(),
     env: process.env.VERCEL ? "vercel" : "development"
   });
@@ -92,7 +129,7 @@ if (fs.existsSync(frontendPath)) {
   console.log("❌ Frontend dist not found at:", frontendPath);
 }
 
-// React Router fallback — must be AFTER API routes
+// React Router fallback
 app.get("/{*splat}", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({
@@ -118,7 +155,7 @@ app.use((err, req, res, next) => {
 
   res.status(500).json({
     message: "Something went wrong!",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined
+    error: err.message
   });
 });
 
