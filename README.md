@@ -2,9 +2,9 @@
 
 ## Live Application
 
-'''
+```
 https://bubble-raneem1.vercel.app/
-'''
+```
 
 ---
 
