@@ -18,7 +18,7 @@ function OrderManagement() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/admin/orders");
+      const res = await fetch("/api/admin/orders");
       const data = await res.json();
       setOrders(data);
     } catch (err) {
@@ -29,7 +29,7 @@ function OrderManagement() {
   };
 
   const updateStatus = async (id, status) => {
-    await fetch(`http://localhost:5000/api/admin/orders/${id}/status`, {
+    await fetch(`/api/admin/orders/${id}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),

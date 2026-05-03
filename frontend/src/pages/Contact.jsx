@@ -35,7 +35,7 @@ function Contact() {
       
       if (token && currentUser) {
         try {
-          const response = await fetch(`http://localhost:5000/api/auth/profile`, {
+          const response = await fetch(`/api/auth/profile`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
           
@@ -71,7 +71,7 @@ function Contact() {
     loadProfileData();
     
     // Load FAQs from backend
-    fetch("http://localhost:5000/api/faqs")
+    fetch("/api/faqs")
       .then(res => res.json())
       .then(data => setFaqs(data))
       .catch(err => console.log(err));
@@ -88,7 +88,7 @@ function Contact() {
       
       setFetchingOrders(true);
       try {
-        const response = await fetch(`http://localhost:5000/api/orders/my-orders`, {
+        const response = await fetch(`/api/orders/my-orders`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         
@@ -186,7 +186,7 @@ function Contact() {
 
     try {
       const token = getAuthToken();
-      const response = await fetch("http://localhost:5000/api/tickets", {
+      const response = await fetch("/api/tickets", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

@@ -31,7 +31,7 @@ useEffect(() => {
 
       try {
         // Load profile from backend
-        const profileResponse = await fetch(`http://localhost:5000/api/auth/profile`, {
+        const profileResponse = await fetch(`/api/auth/profile`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         
@@ -49,7 +49,7 @@ useEffect(() => {
         }
 
         // Load orders from BACKEND
-        const ordersResponse = await fetch(`http://localhost:5000/api/orders/my-orders`, {
+        const ordersResponse = await fetch(`/api/orders/my-orders`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         

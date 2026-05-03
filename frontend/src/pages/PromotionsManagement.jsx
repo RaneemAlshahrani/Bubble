@@ -14,7 +14,7 @@ function PromotionsManagement() {
   }, []);
 
   const fetchPromotions = async () => {
-    const res = await fetch("http://localhost:5000/api/admin/promotions");
+    const res = await fetch("/api/admin/promotions");
     const data = await res.json();
     setPromotions(data);
   };
@@ -26,7 +26,7 @@ function PromotionsManagement() {
     }
 
     const token = getAuthToken();
-    const res = await fetch("http://localhost:5000/api/admin/promotions", {
+    const res = await fetch("/api/admin/promotions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -52,7 +52,7 @@ function PromotionsManagement() {
 
   const handleDelete = async (id) => {
     const token = getAuthToken();
-    await fetch(`http://localhost:5000/api/admin/promotions/${id}`, {
+    await fetch(`/api/admin/promotions/${id}`, {
       method: "DELETE",
       headers: { "Authorization": token ? `Bearer ${token}` : "" }
     });

@@ -38,7 +38,7 @@ function ProductDetails() {
   // Fetch product data
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:5000/api/products/${id}`)
+    fetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
@@ -54,7 +54,7 @@ function ProductDetails() {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/reviews/product/${id}`);
+        const response = await fetch(`/api/reviews/product/${id}`);
         const data = await response.json();
         setReviews(data);
       } catch (error) {
@@ -71,7 +71,7 @@ function ProductDetails() {
     
     const checkWishlist = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`, {
+        const response = await fetch(`/api/wishlist/${userId}`, {
           headers: { "Authorization": token ? `Bearer ${token}` : "" }
         });
         const data = await response.json();
@@ -104,7 +104,7 @@ function ProductDetails() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/cart", {
+      const response = await fetch("/api/cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -141,20 +141,20 @@ function ProductDetails() {
 
     try {
       if (liked) {
-        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`, {
+        const response = await fetch(`/api/wishlist/${userId}`, {
           headers: { "Authorization": token ? `Bearer ${token}` : "" }
         });
         const data = await response.json();
         const wishlistItem = data.find((item) => item.productId?._id === product._id);
         if (wishlistItem) {
-          await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
+          await fetch(`/api/wishlist/${wishlistItem._id}`, {
             method: "DELETE",
             headers: { "Authorization": token ? `Bearer ${token}` : "" }
           });
         }
         setLiked(false);
       } else {
-        await fetch("http://localhost:5000/api/wishlist", {
+        await fetch("/api/wishlist", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -194,7 +194,7 @@ const handleSendReview = async () => {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch("http://localhost:5000/api/reviews", {
+    const response = await fetch("/api/reviews", {
       method: "POST",
       headers,
       body: JSON.stringify({

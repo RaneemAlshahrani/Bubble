@@ -42,7 +42,7 @@ function Checkout() {
       
       if (token && currentUser) {
         try {
-          const response = await fetch(`http://localhost:5000/api/auth/profile`, {
+          const response = await fetch(`/api/auth/profile`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
           
@@ -88,7 +88,7 @@ function Checkout() {
     const fetchCart = async () => {
       try {
         const token = getAuthToken();
-        const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        const response = await fetch(`/api/cart/${userId}`, {
           headers: { "Authorization": token ? `Bearer ${token}` : "" }
         });
         
@@ -164,7 +164,7 @@ function Checkout() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/admin/promotions");
+      const response = await fetch("/api/admin/promotions");
       
       if (!response.ok) {
         throw new Error("Failed to fetch promotions");
@@ -286,7 +286,7 @@ function Checkout() {
     }
     
     try {
-      const response = await fetch("http://localhost:5000/api/auth/profile", {
+      const response = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -323,7 +323,7 @@ function Checkout() {
     const token = getAuthToken();
     await Promise.all(
       cartItems.map((item) =>
-        fetch(`http://localhost:5000/api/cart/${item._id}`, {
+        fetch(`/api/cart/${item._id}`, {
           method: "DELETE",
           headers: { "Authorization": token ? `Bearer ${token}` : "" }
         })
@@ -375,7 +375,7 @@ function Checkout() {
         customization: item.customOptions || null,
       }));
       
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

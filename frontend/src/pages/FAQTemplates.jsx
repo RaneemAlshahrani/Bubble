@@ -16,14 +16,14 @@ function FAQTemplates() {
   }, []);
 
   const loadFaqs = async () => {
-    const res = await fetch("http://localhost:5000/api/faqs");
+    const res = await fetch("/api/faqs");
     const data = await res.json();
     setFaqs(data);
   };
 
   const handleAdd = async () => {
     if (!form.question || !form.answer) return;
-    await fetch("http://localhost:5000/api/faqs", {
+    await fetch("/api/faqs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -36,7 +36,7 @@ function FAQTemplates() {
 
   const handleEdit = async () => {
     if (!form.question || !form.answer) return;
-    await fetch(`http://localhost:5000/api/faqs/${editId}`, {
+    await fetch(`/api/faqs/${editId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -51,7 +51,7 @@ function FAQTemplates() {
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete this FAQ?")) {
-      await fetch(`http://localhost:5000/api/faqs/${id}`, { method: "DELETE" });
+      await fetch(`/api/faqs/${id}`, { method: "DELETE" });
       loadFaqs();
       setMessage("✅ FAQ deleted!");
       setTimeout(() => setMessage(""), 3000);

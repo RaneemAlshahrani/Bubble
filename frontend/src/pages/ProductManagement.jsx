@@ -46,7 +46,7 @@ function ProductManagement() {
   const fetchProducts = async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch("http://localhost:5000/api/admin/products", {
+      const res = await fetch("/api/admin/products", {
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
       const data = await res.json();
@@ -60,7 +60,7 @@ function ProductManagement() {
 
   const fetchProductForEdit = async (productId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${productId}`);
+      const res = await fetch(`/api/products/${productId}`);
       const product = await res.json();
       setFormData({
         name: product.name || "",
@@ -84,7 +84,7 @@ function ProductManagement() {
   const handleDelete = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       const token = getAuthToken();
-      await fetch(`http://localhost:5000/api/admin/products/${productId}`, {
+      await fetch(`/api/admin/products/${productId}`, {
         method: "DELETE",
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
@@ -142,13 +142,13 @@ function ProductManagement() {
     try {
       let response;
       if (mode === "edit") {
-        response = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
+        response = await fetch(`/api/admin/products/${id}`, {
           method: "PUT",
           headers: { "Authorization": token ? `Bearer ${token}` : "" },
           body: submitData,
         });
       } else {
-        response = await fetch("http://localhost:5000/api/admin/products", {
+        response = await fetch("/api/admin/products", {
           method: "POST",
           headers: { "Authorization": token ? `Bearer ${token}` : "" },
           body: submitData,

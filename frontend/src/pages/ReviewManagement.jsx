@@ -15,7 +15,7 @@ function ReviewManagement() {
   const fetchReviews = async () => {
     try {
       const token = getAuthToken();
-      const res = await fetch("http://localhost:5000/api/reviews/admin/all", {
+      const res = await fetch("/api/reviews/admin/all", {
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
       const data = await res.json();
@@ -30,7 +30,7 @@ function ReviewManagement() {
   const handleDelete = async (id) => {
     if (window.confirm("Delete this review?")) {
       const token = getAuthToken();
-      await fetch(`http://localhost:5000/api/reviews/admin/${id}`, {
+      await fetch(`/api/reviews/admin/${id}`, {
         method: "DELETE",
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });

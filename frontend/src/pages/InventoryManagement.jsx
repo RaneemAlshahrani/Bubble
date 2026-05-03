@@ -16,7 +16,7 @@ function InventoryManagement() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/admin/inventory");
+      const res = await fetch("/api/admin/inventory");
       const data = await res.json();
       setProducts(data);
     } catch (err) {
@@ -28,7 +28,7 @@ function InventoryManagement() {
 
   const fetchCustomOptions = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/custom-options");
+      const res = await fetch("/api/custom-options");
       const data = await res.json();
       setCustomOptions(data);
     } catch (err) {
@@ -39,7 +39,7 @@ function InventoryManagement() {
   const updateStock = async (id, newStock) => {
     const safeStock = Number.isNaN(newStock) || newStock < 0 ? 0 : newStock;
 
-    await fetch(`http://localhost:5000/api/admin/inventory/${id}`, {
+    await fetch(`/api/admin/inventory/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stock: safeStock }),
@@ -49,7 +49,7 @@ function InventoryManagement() {
   };
 
   const updateCustomOption = async (id, updates) => {
-    await fetch(`http://localhost:5000/api/custom-options/${id}`, {
+    await fetch(`/api/custom-options/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),

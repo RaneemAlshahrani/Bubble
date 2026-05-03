@@ -34,7 +34,7 @@ function Cart() {
     const fetchCart = async () => {
       try {
         const token = getAuthToken();
-        const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        const response = await fetch(`/api/cart/${userId}`, {
           headers: { "Authorization": token ? `Bearer ${token}` : "" }
         });
         const data = await response.json();
@@ -81,7 +81,7 @@ function Cart() {
     const fetchWishlist = async () => {
       try {
         const token = getAuthToken();
-        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`, {
+        const response = await fetch(`/api/wishlist/${userId}`, {
           headers: { "Authorization": token ? `Bearer ${token}` : "" }
         });
         const data = await response.json();
@@ -120,7 +120,7 @@ function Cart() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/admin/promotions");
+      const response = await fetch("/api/admin/promotions");
       const promos = await response.json();
       const promo = promos.find(p => p.code === code);
 
@@ -156,7 +156,7 @@ function Cart() {
 
     try {
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:5000/api/cart/${itemToUpdate._id}`, {
+      const response = await fetch(`/api/cart/${itemToUpdate._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -178,7 +178,7 @@ function Cart() {
   const removeCartItem = async (itemToRemove) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:5000/api/cart/${itemToRemove._id}`, {
+      const response = await fetch(`/api/cart/${itemToRemove._id}`, {
         method: "DELETE",
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
@@ -196,7 +196,7 @@ function Cart() {
   const removeWishlistItem = async (id) => {
     try {
       const token = getAuthToken();
-      const response = await fetch(`http://localhost:5000/api/wishlist/${id}`, {
+      const response = await fetch(`/api/wishlist/${id}`, {
         method: "DELETE",
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
@@ -216,7 +216,7 @@ function Cart() {
     try {
       const token = getAuthToken();
 
-      const response = await fetch("http://localhost:5000/api/cart", {
+      const response = await fetch("/api/cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -234,7 +234,7 @@ function Cart() {
       await removeWishlistItem(wishlistItem._id);
 
       // Refresh cart
-      const cartResponse = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+      const cartResponse = await fetch(`/api/cart/${userId}`, {
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
       const cartData = await cartResponse.json();

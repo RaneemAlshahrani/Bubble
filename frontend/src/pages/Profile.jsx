@@ -44,7 +44,7 @@ useEffect(() => {
       
       try {
         // Fetch profile from backend
-        const response = await fetch(`http://localhost:5000/api/auth/profile`, {
+        const response = await fetch(`/api/auth/profile`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         
@@ -70,7 +70,7 @@ useEffect(() => {
         }
         
         // Fetch orders from backend
-        const ordersResponse = await fetch(`http://localhost:5000/api/orders/my-orders`, {
+        const ordersResponse = await fetch(`/api/orders/my-orders`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         

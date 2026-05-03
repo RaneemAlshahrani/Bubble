@@ -24,7 +24,7 @@ function Home() {
   const product = products[currentIndex] || null;
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products")
+    fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
         const normal = data.filter((item) => !item.isCustomizable);
@@ -47,7 +47,7 @@ function Home() {
 
     const checkWishlist = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
+        const response = await fetch(`/api/wishlist/${userId}`);
         const data = await response.json();
         setLiked(data.some((item) => item.productId?._id === product._id));
       } catch (error) {
@@ -69,17 +69,17 @@ function Home() {
 
     try {
       if (liked) {
-        const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
+        const response = await fetch(`/api/wishlist/${userId}`);
         const data = await response.json();
         const wishlistItem = data.find((item) => item.productId?._id === product._id);
         if (wishlistItem) {
-          await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
+          await fetch(`/api/wishlist/${wishlistItem._id}`, {
             method: "DELETE",
           });
         }
         setLiked(false);
       } else {
-        await fetch("http://localhost:5000/api/wishlist", {
+        await fetch("/api/wishlist", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -105,7 +105,7 @@ function Home() {
     if (!product) return;
 
     try {
-      const response = await fetch("http://localhost:5000/api/cart", {
+      const response = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

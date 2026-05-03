@@ -22,7 +22,7 @@ function TicketManagement() {
   const loadTickets = async () => {
     try {
       const token = getAuthToken();
-      const response = await fetch("http://localhost:5000/api/tickets", {
+      const response = await fetch("/api/tickets", {
         headers: { "Authorization": token ? `Bearer ${token}` : "" }
       });
       const data = await response.json();
@@ -37,7 +37,7 @@ function TicketManagement() {
   const handleUpdate = async () => {
     if (!selectedTicket) return;
     const token = getAuthToken();
-    await fetch(`http://localhost:5000/api/tickets/${selectedTicket._id}`, {
+    await fetch(`/api/tickets/${selectedTicket._id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

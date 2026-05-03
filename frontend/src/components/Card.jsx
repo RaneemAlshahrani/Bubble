@@ -19,7 +19,7 @@ function Card({ product }) {
 
         const checkWishlist = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
+                const response = await fetch(`/api/wishlist/${userId}`);
                 const data = await response.json();
                 const exists = data.some((item) => item.productId?._id === product._id);
                 setLiked(exists);
@@ -44,19 +44,19 @@ function Card({ product }) {
 
         try {
             if (liked) {
-                const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
+                const response = await fetch(`/api/wishlist/${userId}`);
                 const data = await response.json();
                 const wishlistItem = data.find(
                     (item) => item.productId?._id === product._id
                 );
                 if (wishlistItem) {
-                    await fetch(`http://localhost:5000/api/wishlist/${wishlistItem._id}`, {
+                    await fetch(`/api/wishlist/${wishlistItem._id}`, {
                         method: "DELETE",
                     });
                 }
                 setLiked(false);
             } else {
-                await fetch("http://localhost:5000/api/wishlist", {
+                await fetch("/api/wishlist", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -86,7 +86,7 @@ function Card({ product }) {
         }
 
         try {
-            const response = await fetch("http://localhost:5000/api/cart", {
+            const response = await fetch("/api/cart", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

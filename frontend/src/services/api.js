@@ -2,7 +2,7 @@
 
 const API_URL = import.meta.env.PROD
   ? "/api"
-  : "http://localhost:5000/api";
+  : "/api";
 
 const makeUrl = (endpoint) => {
   if (endpoint.startsWith("/api/")) return endpoint;

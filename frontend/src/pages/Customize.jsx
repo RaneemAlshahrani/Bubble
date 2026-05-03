@@ -19,7 +19,7 @@ function Customize() {
     const [addedToCart, setAddedToCart] = useState(false);
 
     useEffect(() => {
-        fetch("http://localhost:5000/api/custom-options")
+        fetch("/api/custom-options")
             .then((res) => res.json())
             .then((data) => setOptions(data))
             .catch((err) => console.log(err));
@@ -78,7 +78,7 @@ function Customize() {
         if (!isValid) return;
 
         try {
-            const res = await fetch("http://localhost:5000/api/cart", {
+            const res = await fetch("/api/cart", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -100,7 +100,7 @@ function Customize() {
             if (!res.ok) {
                 alert(data.message);
 
-                const optionsRes = await fetch("http://localhost:5000/api/custom-options");
+                const optionsRes = await fetch("/api/custom-options");
                 const updatedOptions = await optionsRes.json();
                 setOptions(updatedOptions);
 

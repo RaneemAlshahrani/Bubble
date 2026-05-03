@@ -26,7 +26,7 @@ useEffect(() => {
       try {
         const token = getAuthToken();
         const response = await fetch(
-          `http://localhost:5000/api/admin/dashboard?salesFilter=${salesFilter}`,
+          `/api/admin/dashboard?salesFilter=${salesFilter}`,
           { headers: { "Authorization": token ? `Bearer ${token}` : "" } }
         );
         const data = await response.json();
