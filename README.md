@@ -79,31 +79,6 @@ VITE_API_URL=https://your-backend-link.onrender.com
 
 ---
 
-### Backend Deployment (Render)
-
-1. Go to [https://render.com](https://render.com)
-2. Create new **Web Service**
-3. Connect GitHub repository
-4. Set:
-
-```txt
-Root Directory: backend
-Build Command: npm install
-Start Command: node server.js
-```
-
-5. Add environment variables:
-
-```env
-MONGO_URL=your_mongodb_connection
-JWT_SECRET=bubble_secret_key_123
-CLOUDINARY_CLOUD_NAME=your_cloud
-CLOUDINARY_API_KEY=your_key
-CLOUDINARY_API_SECRET=your_secret
-```
-
----
-
 ### Database (MongoDB Atlas)
 
 * Database hosted on MongoDB Atlas
